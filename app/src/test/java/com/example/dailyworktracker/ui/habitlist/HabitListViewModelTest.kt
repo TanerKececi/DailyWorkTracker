@@ -148,6 +148,35 @@ class HabitListViewModelTest {
         }
 
     @Test
+    fun `exposes the current streak for each habit`() =
+        runTest {
+            repository.seed(habit(id = 1L))
+            repository.completeOn(habitId = 1L, monday.minusDays(1), monday.minusDays(2))
+
+            viewModel().uiState.test {
+                assertEquals(UiState.Loading, awaitItem())
+                assertEquals(2, (awaitItem() as UiState.Success).data.single().currentStreak)
+            }
+        }
+
+    @Test
+    fun `checking a habit extends its streak`() =
+        runTest {
+            repository.seed(habit(id = 1L))
+            repository.completeOn(habitId = 1L, monday.minusDays(1))
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                assertEquals(UiState.Loading, awaitItem())
+                assertEquals(1, (awaitItem() as UiState.Success).data.single().currentStreak)
+
+                viewModel.onHabitCheckedChanged(habitId = 1L)
+
+                assertEquals(2, (awaitItem() as UiState.Success).data.single().currentStreak)
+            }
+        }
+
+    @Test
     fun `passes the schedule through as a bitmask for the view to format`() =
         runTest {
             // The ViewModel must not resolve display text; that needs a Context.

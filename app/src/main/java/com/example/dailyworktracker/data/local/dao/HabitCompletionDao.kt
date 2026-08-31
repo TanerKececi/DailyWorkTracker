@@ -26,4 +26,20 @@ interface HabitCompletionDao {
     /** Completion dates (epoch days), newest first — the input for streak calculation. */
     @Query("SELECT date FROM habit_completions WHERE habitId = :habitId ORDER BY date DESC")
     fun observeCompletionDates(habitId: Long): Flow<List<Long>>
+
+    /**
+     * Every completion across all habits.
+     *
+     * The list screen needs a streak per habit, and one query the repository groups in memory beats
+     * a per-habit query each time the list changes. Personal habit histories stay small enough that
+     * this is cheaper than the alternative.
+     */
+    @Query("SELECT habitId, date FROM habit_completions")
+    fun observeAllCompletions(): Flow<List<HabitCompletionDate>>
 }
+
+/** Minimal projection: streaks only need which habit was completed on which day. */
+data class HabitCompletionDate(
+    val habitId: Long,
+    val date: Long,
+)

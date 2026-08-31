@@ -15,4 +15,6 @@ data class HabitListItemUiModel(
     val emoji: String,
     val isCompleted: Boolean,
     val scheduleDaysBitmask: Int,
+    /** Consecutive scheduled days kept; 0 means there is no run worth showing yet. */
+    val currentStreak: Int,
 )

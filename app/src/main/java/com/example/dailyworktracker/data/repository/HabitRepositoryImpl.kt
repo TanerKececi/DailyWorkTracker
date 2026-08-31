@@ -4,10 +4,12 @@ import com.example.dailyworktracker.data.local.dao.HabitCompletionDao
 import com.example.dailyworktracker.data.local.dao.HabitDao
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.local.entity.HabitCompletion
-import com.example.dailyworktracker.data.model.HabitWithStatus
+import com.example.dailyworktracker.data.model.TodayHabit
 import com.example.dailyworktracker.util.DateProvider
+import com.example.dailyworktracker.util.StreakCalculator
 import com.example.dailyworktracker.util.WeekdaySchedule
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -28,16 +30,36 @@ class HabitRepositoryImpl
          * flow is constructed. A collection running across midnight keeps the previous day until it is
          * restarted, which is acceptable for v1 and is where a date-tick source would slot in later.
          */
-        override fun observeTodaysHabits(): Flow<List<HabitWithStatus>> =
+        override fun observeTodaysHabits(): Flow<List<TodayHabit>> =
             flow {
                 val today = dateProvider.today()
                 emitAll(
-                    habitDao.observeHabitsWithStatus(today.toEpochDay())
-                        .map { habits ->
-                            habits.filter {
+                    combine(
+                        habitDao.observeHabitsWithStatus(today.toEpochDay()),
+                        completionDao.observeAllCompletions(),
+                    ) { habits, completions ->
+                        val datesByHabit =
+                            completions
+                                .groupBy({ it.habitId }, { LocalDate.ofEpochDay(it.date) })
+                                .mapValues { (_, dates) -> dates.toSet() }
+
+                        habits
+                            .filter {
                                 WeekdaySchedule.isScheduledOn(it.habit.scheduleDaysBitmask, today.dayOfWeek)
                             }
-                        },
+                            .map { habitWithStatus ->
+                                TodayHabit(
+                                    habit = habitWithStatus.habit,
+                                    isCompleted = habitWithStatus.isCompleted,
+                                    currentStreak =
+                                        StreakCalculator.currentStreak(
+                                            completedDates = datesByHabit[habitWithStatus.habit.id].orEmpty(),
+                                            scheduleDaysBitmask = habitWithStatus.habit.scheduleDaysBitmask,
+                                            today = today,
+                                        ),
+                                )
+                            }
+                    },
                 )
             }
 

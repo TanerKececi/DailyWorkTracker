@@ -1,7 +1,7 @@
 package com.example.dailyworktracker.data.repository
 
 import com.example.dailyworktracker.data.local.entity.Habit
-import com.example.dailyworktracker.data.model.HabitWithStatus
+import com.example.dailyworktracker.data.model.TodayHabit
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
@@ -12,8 +12,8 @@ import java.time.LocalDate
  * Dates cross this boundary as [LocalDate]; the epoch-day encoding is a storage detail below it.
  */
 interface HabitRepository {
-    /** Active habits scheduled for today, each flagged with whether it is already done. */
-    fun observeTodaysHabits(): Flow<List<HabitWithStatus>>
+    /** Active habits scheduled for today, each with its completion state and current streak. */
+    fun observeTodaysHabits(): Flow<List<TodayHabit>>
 
     /** Count of all non-archived habits, whatever their schedule. */
     fun observeActiveHabitCount(): Flow<Int>

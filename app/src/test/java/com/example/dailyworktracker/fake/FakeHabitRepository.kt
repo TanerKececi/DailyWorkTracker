@@ -1,8 +1,9 @@
 package com.example.dailyworktracker.fake
 
 import com.example.dailyworktracker.data.local.entity.Habit
-import com.example.dailyworktracker.data.model.HabitWithStatus
+import com.example.dailyworktracker.data.model.TodayHabit
 import com.example.dailyworktracker.data.repository.HabitRepository
+import com.example.dailyworktracker.util.StreakCalculator
 import com.example.dailyworktracker.util.WeekdaySchedule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,15 +48,33 @@ class FakeHabitRepository(
     /** Total stored habits, so tests can prove an edit updated in place rather than duplicating. */
     fun habitCount(): Int = habits.value.size
 
-    override fun observeTodaysHabits(): Flow<List<HabitWithStatus>> =
+    /** Seeds completion history directly, for tests that need an existing streak. */
+    fun completeOn(
+        habitId: Long,
+        vararg dates: LocalDate,
+    ) {
+        completions.value += dates.map { Completion(habitId, it) }
+    }
+
+    override fun observeTodaysHabits(): Flow<List<TodayHabit>> =
         combine(habits, completions) { allHabits, allCompletions ->
             allHabits
                 .filter { !it.isArchived }
                 .filter { WeekdaySchedule.isScheduledOn(it.scheduleDaysBitmask, today.dayOfWeek) }
                 .map { habit ->
-                    HabitWithStatus(
+                    TodayHabit(
                         habit = habit,
                         isCompleted = Completion(habit.id, today) in allCompletions,
+                        currentStreak =
+                            StreakCalculator.currentStreak(
+                                completedDates =
+                                    allCompletions
+                                        .filter { it.habitId == habit.id }
+                                        .map { it.date }
+                                        .toSet(),
+                                scheduleDaysBitmask = habit.scheduleDaysBitmask,
+                                today = today,
+                            ),
                     )
                 }
         }

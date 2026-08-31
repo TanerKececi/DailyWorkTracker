@@ -2,6 +2,7 @@ package com.example.dailyworktracker.ui.habitlist
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -41,6 +42,17 @@ class HabitListAdapter(
                 textEmoji.text = item.emoji
                 textTitle.text = item.title
                 textSchedule.text = ScheduleFormatter.format(context, item.scheduleDaysBitmask)
+
+                // A zero streak is not worth a badge; it would only add noise to a fresh habit.
+                textStreak.isVisible = item.currentStreak > 0
+                if (item.currentStreak > 0) {
+                    textStreak.text =
+                        context.resources.getQuantityString(
+                            R.plurals.habit_streak,
+                            item.currentStreak,
+                            item.currentStreak,
+                        )
+                }
 
                 // Detach the listener before setting state, otherwise recycling a view fires a spurious
                 // toggle for whichever habit previously occupied this holder.

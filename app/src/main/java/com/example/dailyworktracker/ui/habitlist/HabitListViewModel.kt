@@ -3,7 +3,7 @@ package com.example.dailyworktracker.ui.habitlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dailyworktracker.R
-import com.example.dailyworktracker.data.model.HabitWithStatus
+import com.example.dailyworktracker.data.model.TodayHabit
 import com.example.dailyworktracker.data.repository.HabitRepository
 import com.example.dailyworktracker.ui.common.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,7 +28,7 @@ class HabitListViewModel
             ) { todaysHabits, activeHabitCount ->
                 when {
                     todaysHabits.isNotEmpty() ->
-                        UiState.Success(todaysHabits.map(HabitWithStatus::toUiModel))
+                        UiState.Success(todaysHabits.map(TodayHabit::toUiModel))
 
                     // Habits exist, none is due today: saying "no habits yet" would be wrong.
                     activeHabitCount > 0 ->
@@ -65,11 +65,12 @@ class HabitListViewModel
         }
     }
 
-private fun HabitWithStatus.toUiModel() =
+private fun TodayHabit.toUiModel() =
     HabitListItemUiModel(
         id = habit.id,
         title = habit.title,
         emoji = habit.emoji,
         isCompleted = isCompleted,
         scheduleDaysBitmask = habit.scheduleDaysBitmask,
+        currentStreak = currentStreak,
     )

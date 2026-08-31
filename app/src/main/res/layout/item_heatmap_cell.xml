@@ -3,15 +3,27 @@
   screen widths without measuring anything at runtime.
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="3dp">
 
-    <View
+    <FrameLayout
         android:id="@+id/viewCell"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:layout_gravity="center"
-        android:background="@drawable/bg_heatmap_cell" />
+        android:background="@drawable/bg_heatmap_cell">
+
+        <TextView
+            android:id="@+id/textDay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textSize="11sp"
+            tools:text="14" />
+
+    </FrameLayout>
 
 </FrameLayout>

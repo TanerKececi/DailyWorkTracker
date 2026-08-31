@@ -15,5 +15,5 @@ data class HabitDetailUiState(
     /** Share of resolved scheduled days that were completed, in `0f..1f`. */
     val completionRate: Float,
     val completedCount: Int,
-    val heatmap: List<HeatmapCellUiModel>,
+    val heatmap: List<HeatmapItem>,
 )

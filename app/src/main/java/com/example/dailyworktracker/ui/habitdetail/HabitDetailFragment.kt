@@ -55,7 +55,7 @@ class HabitDetailFragment : Fragment(R.layout.fragment_habit_detail) {
 
     private fun setUpHeatmap() {
         // Seven columns means one row is one week, which is what makes the header line up.
-        binding.recyclerHeatmap.layoutManager = GridLayoutManager(requireContext(), DAYS_PER_WEEK)
+        binding.recyclerHeatmap.layoutManager = GridLayoutManager(requireContext(), HabitDetailViewModel.COLUMNS)
         binding.recyclerHeatmap.adapter = heatmapAdapter
         addWeekdayHeader()
     }
@@ -63,17 +63,21 @@ class HabitDetailFragment : Fragment(R.layout.fragment_habit_detail) {
     private fun addWeekdayHeader() {
         val header = binding.rowWeekdayHeader
         header.removeAllViews()
+        // A blank slot under the month gutter, so the letters sit over their own columns.
+        header.addView(headerLabel(""))
         DayOfWeek.entries.forEach { day ->
-            val label =
-                TextView(requireContext()).apply {
-                    text = day.getDisplayName(TextStyle.NARROW, Locale.getDefault())
-                    gravity = Gravity.CENTER
-                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                    setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelSmall)
-                }
-            header.addView(label)
+            header.addView(headerLabel(day.getDisplayName(TextStyle.NARROW, Locale.getDefault())))
         }
     }
+
+    /** Equal-weight so the header divides into the same columns as the grid below it. */
+    private fun headerLabel(text: String): TextView =
+        TextView(requireContext()).apply {
+            this.text = text
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelSmall)
+        }
 
     private fun applyWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
@@ -144,7 +148,7 @@ class HabitDetailFragment : Fragment(R.layout.fragment_habit_detail) {
             )
 
             // The grid starts at the habit's first week, so label the span actually drawn.
-            val weeksShown = data.heatmap.size / DAYS_PER_WEEK
+            val weeksShown = data.heatmap.count { it is HeatmapItem.WeekGutter }
             textHeatmapTitle.text =
                 resources.getQuantityString(R.plurals.habit_detail_last_weeks, weeksShown, weeksShown)
             textTotalCompletions.text =
@@ -167,7 +171,6 @@ class HabitDetailFragment : Fragment(R.layout.fragment_habit_detail) {
     }
 
     private companion object {
-        const val DAYS_PER_WEEK = 7
         const val PERCENT = 100
     }
 }

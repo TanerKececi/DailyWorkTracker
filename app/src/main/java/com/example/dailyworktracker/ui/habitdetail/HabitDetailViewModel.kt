@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import javax.inject.Inject
 
 /** Shows one habit's history: streaks, completion rate, and a grid of recent days. */
@@ -83,8 +84,8 @@ class HabitDetailViewModel
         }
 
         /**
-         * Whole weeks ending on the week containing today, so every row is one week and the weekday
-         * header lines up.
+         * Whole weeks ending on the week containing today, each row being a month gutter followed by
+         * its seven days so the grid lines up with the weekday header.
          *
          * The grid starts at the habit's first week rather than always [WEEKS_SHOWN] back: a habit
          * created today would otherwise open on three months of blank rows. Days inside the range
@@ -96,16 +97,36 @@ class HabitDetailViewModel
             completed: Set<LocalDate>,
             createdOn: LocalDate,
             today: LocalDate,
-        ): List<HeatmapCellUiModel> {
+        ): List<HeatmapItem> {
             val lastDay = today.with(DayOfWeek.SUNDAY)
             val earliestShown = lastDay.minusWeeks(WEEKS_SHOWN - 1L).with(DayOfWeek.MONDAY)
-            val firstDay = maxOf(earliestShown, createdOn.with(DayOfWeek.MONDAY))
+            val firstMonday = maxOf(earliestShown, createdOn.with(DayOfWeek.MONDAY))
 
-            return generateSequence(firstDay) { it.plusDays(1) }
-                .takeWhile { !it.isAfter(lastDay) }
-                .map { date ->
-                    HeatmapCellUiModel(date = date, status = statusOf(habit, completed, date, createdOn, today))
-                }.toList()
+            val items = mutableListOf<HeatmapItem>()
+            var monday = firstMonday
+            var previousMonth: YearMonth? = null
+
+            while (!monday.isAfter(lastDay)) {
+                // Label the gutter only when the month changes, so it reads as a heading.
+                val month = YearMonth.from(monday)
+                items +=
+                    HeatmapItem.WeekGutter(
+                        weekStart = monday,
+                        month = month.takeIf { it != previousMonth },
+                    )
+                previousMonth = month
+
+                (0L until DAYS_PER_WEEK).forEach { offset ->
+                    val date = monday.plusDays(offset)
+                    items +=
+                        HeatmapItem.Day(
+                            date = date,
+                            status = statusOf(habit, completed, date, createdOn, today),
+                        )
+                }
+                monday = monday.plusWeeks(1)
+            }
+            return items
         }
 
         private fun statusOf(
@@ -129,6 +150,10 @@ class HabitDetailViewModel
         companion object {
             const val ARG_HABIT_ID = "habitId"
             const val WEEKS_SHOWN = 12
+            const val DAYS_PER_WEEK = 7
+
+            /** A month gutter plus its seven days; the grid is laid out in this many columns. */
+            const val COLUMNS = DAYS_PER_WEEK + 1
 
             private const val STOP_TIMEOUT_MILLIS = 5_000L
         }

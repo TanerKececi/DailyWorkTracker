@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  The left gutter of a week row. Carries the month name only when the month changes, so it reads as
+  a heading down the side of the grid rather than repeating on every row.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="3dp">
+
+    <TextView
+        android:id="@+id/textMonth"
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        android:layout_gravity="center_vertical|start"
+        android:gravity="center_vertical"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        tools:text="Sep" />
+
+</FrameLayout>

@@ -39,6 +39,9 @@ class HabitDetailViewModelTest {
         return result
     }
 
+    private suspend fun awaitDays(habitId: Long = 1L): List<HeatmapItem.Day> =
+        awaitDetail(habitId).heatmap.filterIsInstance<HeatmapItem.Day>()
+
     @Test
     fun `reports empty when the habit does not exist`() =
         runTest {
@@ -85,15 +88,48 @@ class HabitDetailViewModelTest {
         }
 
     @Test
-    fun `the grid covers whole weeks so the weekday header lines up`() =
+    fun `each row is a month gutter followed by its seven days`() =
         runTest {
             repository.seed(habit(id = 1L))
 
             val heatmap = awaitDetail().heatmap
+            val days = heatmap.filterIsInstance<HeatmapItem.Day>()
 
-            assertEquals(HabitDetailViewModel.WEEKS_SHOWN * 7, heatmap.size)
-            assertEquals(DayOfWeek.MONDAY, heatmap.first().date.dayOfWeek)
-            assertEquals(DayOfWeek.SUNDAY, heatmap.last().date.dayOfWeek)
+            assertEquals(HabitDetailViewModel.WEEKS_SHOWN, heatmap.count { it is HeatmapItem.WeekGutter })
+            assertEquals(HabitDetailViewModel.WEEKS_SHOWN * 7, days.size)
+            // Every eighth slot is a gutter, which is what keeps the columns aligned.
+            heatmap.filterIndexed { index, _ -> index % HabitDetailViewModel.COLUMNS == 0 }
+                .forEach { assertTrue(it is HeatmapItem.WeekGutter) }
+            assertEquals(DayOfWeek.MONDAY, days.first().date.dayOfWeek)
+            assertEquals(DayOfWeek.SUNDAY, days.last().date.dayOfWeek)
+        }
+
+    @Test
+    fun `a month is labelled once, on the week it starts`() =
+        runTest {
+            repository.seed(habit(id = 1L))
+
+            val labelled =
+                awaitDetail().heatmap
+                    .filterIsInstance<HeatmapItem.WeekGutter>()
+                    .mapNotNull { it.month }
+
+            // Spanning twelve weeks, every month named must be distinct and in order.
+            assertEquals(labelled.distinct(), labelled)
+            assertEquals(labelled.sorted(), labelled)
+            assertTrue("Expected at least one month heading", labelled.isNotEmpty())
+        }
+
+    @Test
+    fun `the gutter carries the week it belongs to, so rows stay distinguishable`() =
+        runTest {
+            repository.seed(habit(id = 1L))
+
+            val gutters = awaitDetail().heatmap.filterIsInstance<HeatmapItem.WeekGutter>()
+
+            // Most gutters have no label; without this they would be indistinguishable to DiffUtil.
+            assertEquals(gutters.size, gutters.map { it.weekStart }.distinct().size)
+            gutters.forEach { assertEquals(DayOfWeek.MONDAY, it.weekStart.dayOfWeek) }
         }
 
     @Test
@@ -110,8 +146,8 @@ class HabitDetailViewModelTest {
             val heatmap = awaitDetail().heatmap
 
             // Created today, so only the current week is worth drawing.
-            assertEquals(7, heatmap.size)
-            assertEquals(monday, heatmap.first().date)
+            assertEquals(1, heatmap.count { it is HeatmapItem.WeekGutter })
+            assertEquals(monday, heatmap.filterIsInstance<HeatmapItem.Day>().first().date)
         }
 
     @Test
@@ -127,7 +163,7 @@ class HabitDetailViewModelTest {
             )
 
             val heatmap = awaitDetail().heatmap
-            val byDate = heatmap.associateBy { it.date }
+            val byDate = heatmap.filterIsInstance<HeatmapItem.Day>().associateBy { it.date }
 
             assertEquals(DayStatus.OUT_OF_RANGE, byDate.getValue(createdOn.minusDays(1)).status)
             // The creation day itself is in range and, being unfinished, counts as missed.
@@ -139,7 +175,7 @@ class HabitDetailViewModelTest {
         runTest {
             repository.seed(habit(id = 1L))
 
-            val byDate = awaitDetail().heatmap.associateBy { it.date }
+            val byDate = awaitDays().associateBy { it.date }
 
             assertEquals(DayStatus.OUT_OF_RANGE, byDate.getValue(monday.plusDays(1)).status)
         }
@@ -149,7 +185,7 @@ class HabitDetailViewModelTest {
         runTest {
             repository.seed(habit(id = 1L))
 
-            val byDate = awaitDetail().heatmap.associateBy { it.date }
+            val byDate = awaitDays().associateBy { it.date }
 
             assertEquals(DayStatus.PENDING, byDate.getValue(monday).status)
         }
@@ -160,7 +196,7 @@ class HabitDetailViewModelTest {
             repository.seed(habit(id = 1L))
             repository.completeOn(1L, monday.minusDays(1))
 
-            val byDate = awaitDetail().heatmap.associateBy { it.date }
+            val byDate = awaitDays().associateBy { it.date }
 
             assertEquals(DayStatus.COMPLETED, byDate.getValue(monday.minusDays(1)).status)
             assertEquals(DayStatus.MISSED, byDate.getValue(monday.minusDays(2)).status)
@@ -176,7 +212,7 @@ class HabitDetailViewModelTest {
                 ),
             )
 
-            val byDate = awaitDetail().heatmap.associateBy { it.date }
+            val byDate = awaitDays().associateBy { it.date }
 
             assertEquals(DayStatus.NOT_SCHEDULED, byDate.getValue(monday.minusDays(1)).status)
         }

@@ -2,4 +2,16 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!--
+      The widget is drawn by the launcher, not by our Activity, so `?attr/colorSurface` and the rest
+      of the Material theme are not resolvable there. These are the Material 3 baseline values the
+      app itself gets from Theme.Material3.DayNight, written out concretely, with a values-night
+      copy so the widget still follows the system's dark mode.
+    -->
+    <color name="widget_background">#FFFEF7FF</color>
+    <color name="widget_on_surface">#FF1D1B20</color>
+    <color name="widget_on_surface_variant">#FF49454F</color>
+    <color name="widget_outline">#FF79747E</color>
+    <color name="widget_accent">#FF6750A4</color>
 </resources>

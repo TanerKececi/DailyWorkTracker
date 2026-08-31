@@ -26,6 +26,29 @@
         </activity>
 
         <!--
+            Exported because the AppWidget framework broadcasts APPWIDGET_UPDATE to it
+            from outside the app. It handles only those system broadcasts; anything the
+            widget itself triggers goes to a separate, unexported receiver.
+        -->
+        <receiver
+            android:name=".widget.HabitWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/habit_widget_info" />
+        </receiver>
+
+        <!-- BIND_REMOTEVIEWS keeps anything but the system from asking for the rows. -->
+        <service
+            android:name=".widget.HabitWidgetService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <!--
             The reminder worker is constructed by Hilt, so WorkManager has to start from the
             Application's Configuration.Provider rather than from its own startup initializer.
             Removing the initializer is what makes that on-demand initialisation happen.

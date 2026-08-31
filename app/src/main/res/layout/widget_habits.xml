@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  RemoteViews supports only a fixed set of views: no ConstraintLayout, no MaterialCardView, and no
+  CheckBox before API 31. Hence plain LinearLayouts and an ImageView standing in for the checkbox.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="10dp">
+
+    <LinearLayout
+        android:id="@+id/widgetHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="true"
+        android:orientation="horizontal"
+        android:paddingHorizontal="4dp"
+        android:paddingBottom="6dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/habit_list_title"
+            android:textColor="@color/widget_on_surface"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textWidgetSummary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/widget_on_surface_variant"
+            android:textSize="13sp"
+            tools:text="2 of 5 done" />
+
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/listWidgetHabits"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="@null"
+        android:dividerHeight="0dp" />
+
+    <TextView
+        android:id="@+id/textWidgetEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/widget_empty"
+        android:textColor="@color/widget_on_surface_variant"
+        android:textSize="14sp" />
+
+</LinearLayout>

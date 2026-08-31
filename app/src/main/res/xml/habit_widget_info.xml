@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  updatePeriodMillis is 0 on purpose. The shortest period the system honours is 30 minutes, which is
+  both too slow to reflect a tick-off and too eager to run all day; the app pushes an update when
+  something actually changes instead.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_description"
+    android:initialLayout="@layout/widget_habits"
+    android:minHeight="110dp"
+    android:minResizeHeight="110dp"
+    android:minResizeWidth="180dp"
+    android:minWidth="180dp"
+    android:previewLayout="@layout/widget_habits"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="3"
+    android:targetCellWidth="3"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

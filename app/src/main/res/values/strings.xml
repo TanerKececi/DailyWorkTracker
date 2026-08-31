@@ -63,6 +63,13 @@
     <string name="habit_detail_legend_missed">Missed</string>
     <string name="habit_detail_legend_done">Done</string>
 
+    <!-- Home screen widget -->
+    <string name="widget_description">Habits due today, ticked off from the home screen.</string>
+    <string name="widget_empty">Nothing due today</string>
+    <string name="widget_summary">%1$d of %2$d done</string>
+    <!-- Streak on a widget row, short because the row is narrow -->
+    <string name="widget_streak">🔥 %1$d</string>
+
     <!-- All habits -->
     <string name="all_habits_title">All habits</string>
     <string name="all_habits_archived_badge">Archived</string>

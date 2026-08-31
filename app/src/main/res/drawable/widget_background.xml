@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  Rounded panel behind the widget. Android 12 rounds widget corners for us, but minSdk is 24 and
+  every version before that draws whatever background it is given, square corners included.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="16dp" />
+    <solid android:color="@color/widget_background" />
+</shape>

@@ -33,6 +33,8 @@ android {
 
     buildFeatures {
         viewBinding = true
+        // Needed for the BuildConfig.DEBUG guard around the sample-data tool.
+        buildConfig = true
     }
 
     buildTypes {

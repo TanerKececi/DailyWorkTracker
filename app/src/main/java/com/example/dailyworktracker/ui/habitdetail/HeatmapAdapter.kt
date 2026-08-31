@@ -54,7 +54,8 @@ class HeatmapAdapter :
             when (status) {
                 DayStatus.COMPLETED -> attrColor(context, androidx.appcompat.R.attr.colorPrimary)
                 DayStatus.MISSED -> attrColor(context, com.google.android.material.R.attr.colorErrorContainer)
-                DayStatus.PENDING -> attrColor(context, com.google.android.material.R.attr.colorSecondaryContainer)
+                // Clearly tinted, not another shade of grey: today is still due, not an off-day.
+                DayStatus.PENDING -> attrColor(context, com.google.android.material.R.attr.colorPrimaryContainer)
                 DayStatus.NOT_SCHEDULED, DayStatus.OUT_OF_RANGE ->
                     attrColor(context, com.google.android.material.R.attr.colorSurfaceVariant)
             }

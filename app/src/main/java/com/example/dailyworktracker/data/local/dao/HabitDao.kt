@@ -23,6 +23,15 @@ interface HabitDao {
     @Query("UPDATE habits SET isArchived = 0 WHERE id = :habitId")
     suspend fun unarchive(habitId: Long)
 
+    /**
+     * Removes every habit, cascading to their completions.
+     *
+     * Exists only for the debug sample-data seeder; nothing in the shipped UI deletes habits, which
+     * are archived rather than destroyed.
+     */
+    @Query("DELETE FROM habits")
+    suspend fun deleteAll()
+
     /** Every habit regardless of schedule or archived state, active ones first. */
     @Query("SELECT * FROM habits ORDER BY isArchived ASC, createdAt ASC")
     fun observeAllHabits(): Flow<List<Habit>>

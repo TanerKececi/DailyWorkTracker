@@ -31,6 +31,10 @@
     <string name="habit_archived_message">%1$s archived</string>
     <string name="habit_restored_message">%1$s restored</string>
 
+    <!-- Debug tools, only surfaced in debug builds -->
+    <string name="debug_seed_sample_data">Insert sample data</string>
+    <string name="debug_sample_data_inserted">Sample data inserted</string>
+
     <!-- Habit detail -->
     <string name="habit_detail_title">History</string>
     <string name="habit_action_history">History</string>

@@ -13,7 +13,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import com.example.dailyworktracker.BuildConfig
 import com.example.dailyworktracker.R
+import com.example.dailyworktracker.data.sample.SampleDataSeeder
 import com.example.dailyworktracker.databinding.FragmentHabitListBinding
 import com.example.dailyworktracker.ui.addedithabit.AddEditHabitViewModel.Companion.NEW_HABIT_ID
 import com.example.dailyworktracker.ui.common.DateLabelFormatter
@@ -28,12 +30,17 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import javax.inject.Inject
 
 /** Shows the habits due on the selected day and lets the user tick them off, today or in the past. */
 @AndroidEntryPoint
 class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
     private val binding by viewBinding(FragmentHabitListBinding::bind)
     private val viewModel: HabitListViewModel by viewModels()
+
+    /** Only ever used behind a `BuildConfig.DEBUG` check; see [seedSampleData]. */
+    @Inject
+    lateinit var sampleDataSeeder: SampleDataSeeder
 
     private val habitAdapter =
         HabitListAdapter(
@@ -114,6 +121,9 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
     private fun setUpToolbarMenu() =
         with(binding.toolbar) {
             inflateMenu(R.menu.menu_habit_list)
+            // Sample data is a development aid; it must never be reachable in a release build.
+            menu.findItem(R.id.action_seed_sample_data).isVisible = BuildConfig.DEBUG
+
             setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.action_all_habits -> {
@@ -123,10 +133,34 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
                         true
                     }
 
+                    R.id.action_seed_sample_data -> {
+                        seedSampleData()
+                        true
+                    }
+
                     else -> false
                 }
             }
         }
+
+    /**
+     * Debug-only development aid.
+     *
+     * Deliberately driven from the Fragment rather than the ViewModel: the seeder is not part of the
+     * app's behaviour, and threading it through the production ViewModel would put a debug
+     * dependency in its constructor and in every test that builds one.
+     */
+    private fun seedSampleData() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            sampleDataSeeder.seed()
+            viewModel.onTodayClicked()
+            Snackbar.make(
+                binding.root,
+                R.string.debug_sample_data_inserted,
+                Snackbar.LENGTH_SHORT,
+            ).setAnchorView(binding.fabAddHabit).show()
+        }
+    }
 
     private fun navigateToHabitEditor(habitId: Long) {
         findNavController().navigate(

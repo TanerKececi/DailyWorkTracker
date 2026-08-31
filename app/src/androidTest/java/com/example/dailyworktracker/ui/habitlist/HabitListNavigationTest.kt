@@ -75,10 +75,16 @@ class HabitListNavigationTest {
 
             onView(withId(R.id.toolbar)).check { view, _ ->
                 val toolbar = view as MaterialToolbar
+                // Count this one item rather than the whole menu: the concern is duplicate
+                // inflation, and asserting a total breaks whenever a new action is added.
+                val allHabitsItems =
+                    (0 until toolbar.menu.size()).count {
+                        toolbar.menu.getItem(it).itemId == R.id.action_all_habits
+                    }
                 assertEquals(
                     "Menu was inflated more than once into the same toolbar",
                     1,
-                    toolbar.menu.size(),
+                    allHabitsItems,
                 )
             }
         }

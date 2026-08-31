@@ -1,3 +1,5 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+# Machine-specific: lists the emulators/devices available on this computer
+/deviceManager.xml

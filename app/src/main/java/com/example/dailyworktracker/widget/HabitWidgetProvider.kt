@@ -36,6 +36,27 @@ class HabitWidgetProvider : AppWidgetProvider() {
     @Inject
     lateinit var dateProvider: DateProvider
 
+    /**
+     * The widget is always showing *today*, so it has to be told when today changes.
+     *
+     * Without this it would sit on yesterday's list until something else happened to
+     * redraw it, and a tap on a stale row would tick the habit off for the wrong day.
+     * All three of these actions are exempt from the implicit-broadcast restrictions, so a
+     * manifest receiver still gets them.
+     */
+    override fun onReceive(
+        context: Context,
+        intent: Intent,
+    ) {
+        // Hilt injects here, and this is also what dispatches APPWIDGET_UPDATE to onUpdate.
+        super.onReceive(context, intent)
+        if (intent.action !in DAY_CHANGED_ACTIONS) return
+
+        val appWidgetManager = AppWidgetManager.getInstance(context) ?: return
+        val ids = placedWidgetIds(context, appWidgetManager)
+        if (ids.isNotEmpty()) onUpdate(context, appWidgetManager, ids)
+    }
+
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -130,6 +151,22 @@ class HabitWidgetProvider : AppWidgetProvider() {
         )
 
     companion object {
+        /** ACTION_TIME_CHANGED is the constant behind "android.intent.action.TIME_SET". */
+        private val DAY_CHANGED_ACTIONS =
+            setOf(
+                Intent.ACTION_DATE_CHANGED,
+                Intent.ACTION_TIME_CHANGED,
+                Intent.ACTION_TIMEZONE_CHANGED,
+            )
+
+        private fun placedWidgetIds(
+            context: Context,
+            appWidgetManager: AppWidgetManager,
+        ): IntArray =
+            appWidgetManager.getAppWidgetIds(
+                ComponentName(context, HabitWidgetProvider::class.java),
+            )
+
         /**
          * Asks every placed widget to redraw.
          *
@@ -138,10 +175,7 @@ class HabitWidgetProvider : AppWidgetProvider() {
          */
         fun requestUpdate(context: Context) {
             val appWidgetManager = AppWidgetManager.getInstance(context) ?: return
-            val ids =
-                appWidgetManager.getAppWidgetIds(
-                    ComponentName(context, HabitWidgetProvider::class.java),
-                )
+            val ids = placedWidgetIds(context, appWidgetManager)
             if (ids.isEmpty()) return
 
             context.sendBroadcast(

@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.navigation.safeargs.kotlin)
 }
 
 android {
@@ -19,6 +20,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildFeatures {
+        viewBinding = true
     }
 
     buildTypes {
@@ -60,7 +65,15 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     implementation(libs.hilt.android)
+    implementation(libs.androidx.hilt.navigation.fragment)
     ksp(libs.hilt.compiler)
+
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.fragment.ktx)
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 

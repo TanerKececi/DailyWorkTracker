@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">DailyWorkTracker</string>
+
+    <!-- Habit list -->
+    <string name="habit_list_title">Today</string>
+    <string name="habit_list_empty_title">No habits yet</string>
+    <string name="habit_list_empty_message">Add a habit to start tracking your daily routine.</string>
+    <string name="habit_list_error_title">Something went wrong</string>
+    <string name="habit_list_add_habit">Add habit</string>
+    <string name="habit_list_more_options">More options for %1$s</string>
+    <string name="habit_completed_checkbox">Mark %1$s as done today</string>
+
+    <!-- Habit row actions -->
+    <string name="habit_action_archive">Archive</string>
+    <string name="habit_archived_message">%1$s archived</string>
+
+    <!-- Schedule labels -->
+    <string name="schedule_every_day">Every day</string>
+    <string name="schedule_no_days">No days selected</string>
 </resources>

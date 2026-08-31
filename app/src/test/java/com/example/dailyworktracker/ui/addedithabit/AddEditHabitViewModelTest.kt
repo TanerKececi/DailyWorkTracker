@@ -6,6 +6,7 @@ import com.example.dailyworktracker.fake.FakeHabitRepository
 import com.example.dailyworktracker.fake.habit
 import com.example.dailyworktracker.testing.MainDispatcherRule
 import com.example.dailyworktracker.util.WeekdaySchedule
+import com.example.dailyworktracker.util.reminderTime
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -15,6 +16,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.time.DayOfWeek
+import java.time.LocalTime
 
 class AddEditHabitViewModelTest {
     @get:Rule
@@ -186,5 +188,111 @@ class AddEditHabitViewModelTest {
             advanceUntilIdle()
 
             assertEquals(12345L, repository.getHabit(7L)?.createdAt)
+        }
+
+    @Test
+    fun `a new habit starts with the reminder switched off`() {
+        val state = viewModel().uiState.value
+
+        assertFalse(state.isReminderEnabled)
+        assertEquals(AddEditHabitUiState.DEFAULT_REMINDER_TIME, state.reminderTime)
+    }
+
+    @Test
+    fun `switching the reminder off and on again keeps the chosen time`() {
+        val viewModel = viewModel()
+
+        viewModel.onReminderEnabledChanged(true)
+        viewModel.onReminderTimeChanged(LocalTime.of(7, 30))
+        viewModel.onReminderEnabledChanged(false)
+        viewModel.onReminderEnabledChanged(true)
+
+        assertEquals(LocalTime.of(7, 30), viewModel.uiState.value.reminderTime)
+    }
+
+    @Test
+    fun `saves the chosen reminder time`() =
+        runTest {
+            val viewModel = viewModel()
+
+            viewModel.onTitleChanged("Do sport")
+            viewModel.onReminderEnabledChanged(true)
+            viewModel.onReminderTimeChanged(LocalTime.of(18, 45))
+            viewModel.onSaveClicked()
+            advanceUntilIdle()
+
+            assertEquals(LocalTime.of(18, 45), repository.getHabit(1L)?.reminderTime)
+        }
+
+    @Test
+    fun `a time picked while the reminder is off is not saved`() =
+        runTest {
+            val viewModel = viewModel()
+
+            viewModel.onTitleChanged("Do sport")
+            viewModel.onReminderTimeChanged(LocalTime.of(18, 45))
+            viewModel.onSaveClicked()
+            advanceUntilIdle()
+
+            val saved = requireNotNull(repository.getHabit(1L))
+            assertNull(saved.reminderTime)
+            // Both halves must be absent: an hour without a minute is not a time.
+            assertNull(saved.reminderHour)
+            assertNull(saved.reminderMinute)
+        }
+
+    @Test
+    fun `editing loads the existing reminder`() =
+        runTest {
+            repository.seed(habit(id = 7L, reminderTime = LocalTime.of(6, 15)))
+
+            val viewModel = viewModel(habitId = 7L)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertTrue(state.isReminderEnabled)
+            assertEquals(LocalTime.of(6, 15), state.reminderTime)
+        }
+
+    @Test
+    fun `editing a habit without a reminder leaves the switch off`() =
+        runTest {
+            repository.seed(habit(id = 7L))
+
+            val viewModel = viewModel(habitId = 7L)
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.isReminderEnabled)
+        }
+
+    @Test
+    fun `turning a reminder off while editing removes it from the saved habit`() =
+        runTest {
+            repository.seed(habit(id = 7L, reminderTime = LocalTime.of(6, 15)))
+
+            val viewModel = viewModel(habitId = 7L)
+            advanceUntilIdle()
+            viewModel.onReminderEnabledChanged(false)
+            viewModel.onSaveClicked()
+            advanceUntilIdle()
+
+            val saved = requireNotNull(repository.getHabit(7L))
+            assertNull(saved.reminderTime)
+            assertNull(saved.reminderHour)
+            assertNull(saved.reminderMinute)
+        }
+
+    @Test
+    fun `editing preserves a reminder the user did not touch`() =
+        runTest {
+            repository.seed(habit(id = 7L, reminderTime = LocalTime.of(6, 15)))
+
+            val viewModel = viewModel(habitId = 7L)
+            advanceUntilIdle()
+            viewModel.onTitleChanged("Renamed")
+            viewModel.onSaveClicked()
+            advanceUntilIdle()
+
+            assertEquals(LocalTime.of(6, 15), repository.getHabit(7L)?.reminderTime)
         }
 }

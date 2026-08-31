@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.ItemAllHabitBinding
 import com.example.dailyworktracker.ui.common.ScheduleFormatter
+import com.example.dailyworktracker.ui.common.TimeFormatter
 
 class AllHabitsAdapter(
     private val onMoreClicked: (item: AllHabitItemUiModel, anchor: View) -> Unit,
@@ -37,7 +38,7 @@ class AllHabitsAdapter(
                 val context = root.context
                 textEmoji.text = item.emoji
                 textTitle.text = item.title
-                textSchedule.text = ScheduleFormatter.format(context, item.scheduleDaysBitmask)
+                textSchedule.text = scheduleLine(item)
                 chipArchived.isVisible = item.isArchived
 
                 // Dim archived habits so the distinction reads at a glance, not just from the badge.
@@ -47,6 +48,18 @@ class AllHabitsAdapter(
                     context.getString(R.string.habit_list_more_options, item.title)
                 buttonMore.setOnClickListener { onMoreClicked(item, it) }
             }
+
+        /** The reminder rides on the schedule line so a row stays two lines tall. */
+        private fun scheduleLine(item: AllHabitItemUiModel): String {
+            val context = binding.root.context
+            val schedule = ScheduleFormatter.format(context, item.scheduleDaysBitmask)
+            val reminder = item.reminderTime ?: return schedule
+            return context.getString(
+                R.string.all_habits_schedule_with_reminder,
+                schedule,
+                TimeFormatter.format(context, reminder),
+            )
+        }
     }
 
     private companion object {

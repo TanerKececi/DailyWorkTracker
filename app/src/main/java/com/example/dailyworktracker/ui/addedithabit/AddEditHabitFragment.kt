@@ -1,6 +1,7 @@
 package com.example.dailyworktracker.ui.addedithabit
 
 import android.os.Bundle
+import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,12 +14,16 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.BottomsheetAddEditHabitBinding
+import com.example.dailyworktracker.ui.common.TimeFormatter
 import com.example.dailyworktracker.util.WeekdaySchedule
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.chip.Chip
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
+import java.time.LocalTime
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -26,8 +31,8 @@ import java.util.Locale
  * Creates or edits a habit.
  *
  * A bottom sheet rather than a full destination: the form is short, and staying in context keeps the
- * habit list visible behind it. If this grows (icon grid, reminder picker) it can be promoted to a
- * full-screen destination without touching the ViewModel.
+ * habit list visible behind it. If this grows (icon grid, more scheduling options) it can be
+ * promoted to a full-screen destination without touching the ViewModel.
  */
 @AndroidEntryPoint
 class AddEditHabitFragment : BottomSheetDialogFragment() {
@@ -55,6 +60,7 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
         super.onViewCreated(view, savedInstanceState)
         setUpDayChips()
         setUpInputs()
+        reconnectTimePicker()
         observeUiState()
     }
 
@@ -89,9 +95,48 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
             switchEveryDay.setOnCheckedChangeListener { _, isChecked ->
                 if (!isBindingState) viewModel.onEveryDayToggled(isChecked)
             }
+            switchReminder.setOnCheckedChangeListener { _, isChecked ->
+                if (!isBindingState) viewModel.onReminderEnabledChanged(isChecked)
+            }
+            buttonReminderTime.setOnClickListener { showTimePicker() }
             buttonSave.setOnClickListener { viewModel.onSaveClicked() }
             buttonCancel.setOnClickListener { dismiss() }
         }
+
+    private fun showTimePicker() {
+        val current = viewModel.uiState.value.reminderTime
+        MaterialTimePicker.Builder()
+            .setTitleText(R.string.add_habit_reminder_picker_title)
+            // Follow the device clock setting rather than forcing one on the user.
+            .setTimeFormat(
+                if (DateFormat.is24HourFormat(requireContext())) {
+                    TimeFormat.CLOCK_24H
+                } else {
+                    TimeFormat.CLOCK_12H
+                },
+            )
+            .setHour(current.hour)
+            .setMinute(current.minute)
+            .build()
+            .also(::listenToTimePicker)
+            .show(childFragmentManager, TIME_PICKER_TAG)
+    }
+
+    /**
+     * A dialog fragment outlives the listener that created it: after a rotation the fragment manager
+     * restores the picker but its callback is gone, so confirming it would silently do nothing.
+     * Re-attaching on every view creation closes that gap.
+     */
+    private fun reconnectTimePicker() {
+        val restored = childFragmentManager.findFragmentByTag(TIME_PICKER_TAG) as? MaterialTimePicker
+        restored?.let(::listenToTimePicker)
+    }
+
+    private fun listenToTimePicker(picker: MaterialTimePicker) {
+        picker.addOnPositiveButtonClickListener {
+            viewModel.onReminderTimeChanged(LocalTime.of(picker.hour, picker.minute))
+        }
+    }
 
     private fun observeUiState() {
         viewLifecycleOwner.lifecycleScope.launch {
@@ -129,6 +174,8 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
             }
             switchEveryDay.isChecked = WeekdaySchedule.isEveryDay(state.scheduleDaysBitmask)
 
+            renderReminder(state.isReminderEnabled, state.reminderTime)
+
             inputLayoutTitle.error = state.titleError?.let(::getString)
             textScheduleError.isVisible = state.scheduleError != null
             state.scheduleError?.let(textScheduleError::setText)
@@ -137,4 +184,21 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
 
             isBindingState = false
         }
+
+    private fun renderReminder(
+        isEnabled: Boolean,
+        time: LocalTime,
+    ) = with(binding) {
+        switchReminder.isChecked = isEnabled
+        buttonReminderTime.isVisible = isEnabled
+
+        val formatted = TimeFormatter.format(requireContext(), time)
+        buttonReminderTime.text = formatted
+        buttonReminderTime.contentDescription =
+            getString(R.string.add_habit_reminder_time_description, formatted)
+    }
+
+    private companion object {
+        const val TIME_PICKER_TAG = "reminder_time_picker"
+    }
 }

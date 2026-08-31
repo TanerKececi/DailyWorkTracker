@@ -98,6 +98,30 @@
             android:visibility="gone"
             tools:visibility="visible" />
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="20dp"
+            android:background="?attr/colorOutlineVariant" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switchReminder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/add_habit_reminder_label" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonReminderTime"
+            style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"
+            app:icon="@drawable/ic_alarm"
+            tools:text="09:00"
+            tools:visibility="visible" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

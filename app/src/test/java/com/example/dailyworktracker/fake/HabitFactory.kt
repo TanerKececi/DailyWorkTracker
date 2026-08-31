@@ -2,6 +2,7 @@ package com.example.dailyworktracker.fake
 
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.util.WeekdaySchedule
+import java.time.LocalTime
 
 /**
  * Builds a [Habit] with sensible defaults so each test only states the fields it cares about,
@@ -12,6 +13,7 @@ fun habit(
     title: String = "Brush teeth",
     emoji: String = "🪥",
     scheduleDaysBitmask: Int = WeekdaySchedule.EVERY_DAY,
+    reminderTime: LocalTime? = null,
     createdAt: Long = 0L,
     isArchived: Boolean = false,
 ) = Habit(
@@ -19,6 +21,8 @@ fun habit(
     title = title,
     emoji = emoji,
     scheduleDaysBitmask = scheduleDaysBitmask,
+    reminderHour = reminderTime?.hour,
+    reminderMinute = reminderTime?.minute,
     createdAt = createdAt,
     isArchived = isArchived,
 )

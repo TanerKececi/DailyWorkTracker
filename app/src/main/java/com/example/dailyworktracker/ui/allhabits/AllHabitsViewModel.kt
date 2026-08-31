@@ -6,6 +6,7 @@ import com.example.dailyworktracker.R
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.repository.HabitRepository
 import com.example.dailyworktracker.ui.common.UiState
+import com.example.dailyworktracker.util.reminderTime
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -70,5 +71,6 @@ private fun Habit.toUiModel() =
         title = title,
         emoji = emoji,
         scheduleDaysBitmask = scheduleDaysBitmask,
+        reminderTime = reminderTime,
         isArchived = isArchived,
     )

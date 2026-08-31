@@ -7,6 +7,8 @@ import com.example.dailyworktracker.R
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.repository.HabitRepository
 import com.example.dailyworktracker.util.WeekdaySchedule
+import com.example.dailyworktracker.util.reminderTime
+import com.example.dailyworktracker.util.withReminderTime
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
+import java.time.LocalTime
 import javax.inject.Inject
 
 /**
@@ -58,6 +61,8 @@ class AddEditHabitViewModel
                         title = habit.title,
                         emoji = habit.emoji,
                         scheduleDaysBitmask = habit.scheduleDaysBitmask,
+                        isReminderEnabled = habit.reminderTime != null,
+                        reminderTime = habit.reminderTime ?: it.reminderTime,
                     )
                 }
             }
@@ -98,6 +103,14 @@ class AddEditHabitViewModel
             }
         }
 
+        fun onReminderEnabledChanged(isEnabled: Boolean) {
+            _uiState.update { it.copy(isReminderEnabled = isEnabled) }
+        }
+
+        fun onReminderTimeChanged(time: LocalTime) {
+            _uiState.update { it.copy(reminderTime = time) }
+        }
+
         fun onSaveClicked() {
             val state = _uiState.value
             val trimmedTitle = state.title.trim()
@@ -123,7 +136,7 @@ class AddEditHabitViewModel
                             title = trimmedTitle,
                             emoji = emoji,
                             scheduleDaysBitmask = state.scheduleDaysBitmask,
-                        ),
+                        ).withReminderTime(state.reminderTime.takeIf { state.isReminderEnabled }),
                     )
                 } else {
                     repository.addHabit(
@@ -132,7 +145,7 @@ class AddEditHabitViewModel
                             emoji = emoji,
                             scheduleDaysBitmask = state.scheduleDaysBitmask,
                             createdAt = System.currentTimeMillis(),
-                        ),
+                        ).withReminderTime(state.reminderTime.takeIf { state.isReminderEnabled }),
                     )
                 }
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }

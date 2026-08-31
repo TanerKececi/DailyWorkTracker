@@ -1,6 +1,7 @@
 package com.example.dailyworktracker.widget
 
 import android.content.Context
+import android.content.Intent
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
@@ -57,12 +58,23 @@ class HabitWidgetFactory(
                 R.id.imageWidgetCheck,
                 if (item.isCompleted) R.drawable.ic_widget_checked else R.drawable.ic_widget_unchecked,
             )
-            setContentDescription(
-                R.id.imageWidgetCheck,
-                context.getString(R.string.habit_completed_checkbox, item.habit.title),
+            setContentDescription(R.id.imageWidgetCheck, checkDescription(item))
+
+            // Rows in a collection cannot carry their own PendingIntent; they fill in the
+            // template the provider set on the list, and the extras are what say which habit.
+            setOnClickFillInIntent(
+                R.id.widgetItemRoot,
+                Intent().putExtra(HabitWidgetActionReceiver.EXTRA_HABIT_ID, item.habit.id),
             )
         }
     }
+
+    private fun checkDescription(item: TodayHabit): String =
+        if (item.isCompleted) {
+            context.getString(R.string.widget_item_done, item.habit.title)
+        } else {
+            context.getString(R.string.habit_completed_checkbox, item.habit.title)
+        }
 
     /** Rows are cheap to build, so there is nothing worth showing while one is prepared. */
     override fun getLoadingView(): RemoteViews? = null

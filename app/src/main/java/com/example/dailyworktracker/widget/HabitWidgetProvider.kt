@@ -77,6 +77,7 @@ class HabitWidgetProvider : AppWidgetProvider() {
                 )
                 setRemoteAdapter(R.id.listWidgetHabits, rowFactoryIntent(context, appWidgetId))
                 setEmptyView(R.id.listWidgetHabits, R.id.textWidgetEmpty)
+                setPendingIntentTemplate(R.id.listWidgetHabits, toggleTemplate(context))
                 setOnClickPendingIntent(R.id.widgetHeader, openAppIntent(context))
             }
 
@@ -100,6 +101,24 @@ class HabitWidgetProvider : AppWidgetProvider() {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
             data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
         }
+
+    /**
+     * The single PendingIntent every row fills in with its own habit id.
+     *
+     * It has to be mutable: filling in that id is precisely the mutation a collection
+     * performs on its template, and an immutable one would deliver every tap with no id.
+     * FLAG_MUTABLE is a compile-time constant, so naming it here is safe below API 31,
+     * where the bit simply goes unread.
+     */
+    private fun toggleTemplate(context: Context): PendingIntent =
+        PendingIntent.getBroadcast(
+            context,
+            0,
+            Intent(context, HabitWidgetActionReceiver::class.java).apply {
+                action = HabitWidgetActionReceiver.ACTION_TOGGLE
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+        )
 
     private fun openAppIntent(context: Context): PendingIntent =
         PendingIntent.getActivity(

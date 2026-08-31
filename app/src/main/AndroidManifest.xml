@@ -42,6 +42,15 @@
                 android:resource="@xml/habit_widget_info" />
         </receiver>
 
+        <!--
+            Unexported: the only thing that fires it is a PendingIntent this app created,
+            and a PendingIntent carries its creator identity, so the launcher can still
+            deliver the tap. Nothing else can tick a habit off.
+        -->
+        <receiver
+            android:name=".widget.HabitWidgetActionReceiver"
+            android:exported="false" />
+
         <!-- BIND_REMOTEVIEWS keeps anything but the system from asking for the rows. -->
         <service
             android:name=".widget.HabitWidgetService"

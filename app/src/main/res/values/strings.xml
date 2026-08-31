@@ -69,6 +69,8 @@
     <string name="widget_summary">%1$d of %2$d done</string>
     <!-- Streak on a widget row, short because the row is narrow -->
     <string name="widget_streak">🔥 %1$d</string>
+    <!-- Spoken for a row already ticked off; the unchecked case reuses habit_completed_checkbox -->
+    <string name="widget_item_done">%1$s, done</string>
 
     <!-- All habits -->
     <string name="all_habits_title">All habits</string>

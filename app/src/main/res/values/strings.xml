@@ -5,12 +5,24 @@
     <string name="habit_list_title">Today</string>
     <string name="habit_list_empty_title">No habits yet</string>
     <string name="habit_list_empty_message">Add a habit to start tracking your daily routine.</string>
-    <string name="habit_list_nothing_today_title">Nothing scheduled today</string>
-    <string name="habit_list_nothing_today_message">None of your habits repeat on this day.</string>
+    <string name="habit_list_nothing_scheduled_title">Nothing scheduled</string>
+    <!-- Covers both "does not repeat that weekday" and "did not exist yet", so it stays true on
+         any past day without needing the ViewModel to distinguish the two. -->
+    <string name="habit_list_nothing_scheduled_message">No habits were due on this day.</string>
+
+    <!-- Date navigation -->
+    <string name="date_today">Today</string>
+    <string name="date_yesterday">Yesterday</string>
+    <string name="date_previous_day">Previous day</string>
+    <string name="date_next_day">Next day</string>
+    <string name="date_pick_day">Pick a day</string>
+    <string name="date_jump_to_today">Today</string>
+    <string name="date_picker_title">Select a day</string>
     <string name="habit_list_error_title">Something went wrong</string>
     <string name="habit_list_add_habit">Add habit</string>
     <string name="habit_list_more_options">More options for %1$s</string>
-    <string name="habit_completed_checkbox">Mark %1$s as done today</string>
+    <!-- No "today": the same row is used when reviewing a past day. -->
+    <string name="habit_completed_checkbox">Mark %1$s as done</string>
 
     <!-- Habit row actions -->
     <string name="habit_action_edit">Edit</string>

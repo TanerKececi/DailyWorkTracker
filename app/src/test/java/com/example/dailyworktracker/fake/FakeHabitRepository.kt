@@ -3,8 +3,8 @@ package com.example.dailyworktracker.fake
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.model.TodayHabit
 import com.example.dailyworktracker.data.repository.HabitRepository
+import com.example.dailyworktracker.util.HabitVisibility
 import com.example.dailyworktracker.util.StreakCalculator
-import com.example.dailyworktracker.util.WeekdaySchedule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -14,14 +14,13 @@ import java.time.LocalDate
 /**
  * In-memory [HabitRepository] for unit tests.
  *
- * This is a working fake rather than a stub: it applies the same schedule filtering and
- * insert-or-delete toggle semantics as the real implementation, so tests exercise realistic
- * behaviour without Room or Android.
+ * This is a working fake rather than a stub: it reuses [HabitVisibility] and [StreakCalculator] and
+ * applies the same insert-or-delete toggle semantics as the real implementation, so tests exercise
+ * realistic behaviour without Room or Android.
+ *
+ * It holds no clock. Like the real repository, every date arrives as a parameter.
  */
-class FakeHabitRepository(
-    // Defaults to a Monday, so weekday-sensitive tests start from a known day.
-    private var today: LocalDate = LocalDate.of(2026, 8, 31),
-) : HabitRepository {
+class FakeHabitRepository : HabitRepository {
     private val habits = MutableStateFlow<List<Habit>>(emptyList())
     private val completions = MutableStateFlow<Set<Completion>>(emptySet())
 
@@ -32,10 +31,6 @@ class FakeHabitRepository(
     val unarchivedIds = mutableListOf<Long>()
 
     data class Completion(val habitId: Long, val date: LocalDate)
-
-    fun setToday(date: LocalDate) {
-        today = date
-    }
 
     /** Seeds habits directly, bypassing [addHabit], so tests can start from a known state. */
     fun seed(vararg seeded: Habit) {
@@ -56,15 +51,15 @@ class FakeHabitRepository(
         completions.value += dates.map { Completion(habitId, it) }
     }
 
-    override fun observeTodaysHabits(): Flow<List<TodayHabit>> =
+    override fun observeHabitsFor(date: LocalDate): Flow<List<TodayHabit>> =
         combine(habits, completions) { allHabits, allCompletions ->
             allHabits
-                .filter { !it.isArchived }
-                .filter { WeekdaySchedule.isScheduledOn(it.scheduleDaysBitmask, today.dayOfWeek) }
+                // Same predicate as the real repository, so the two cannot drift apart.
+                .filter { HabitVisibility.isActiveOn(it, date) }
                 .map { habit ->
                     TodayHabit(
                         habit = habit,
-                        isCompleted = Completion(habit.id, today) in allCompletions,
+                        isCompleted = Completion(habit.id, date) in allCompletions,
                         currentStreak =
                             StreakCalculator.currentStreak(
                                 completedDates =
@@ -73,7 +68,7 @@ class FakeHabitRepository(
                                         .map { it.date }
                                         .toSet(),
                                 scheduleDaysBitmask = habit.scheduleDaysBitmask,
-                                today = today,
+                                asOf = date,
                             ),
                     )
                 }
@@ -129,6 +124,4 @@ class FakeHabitRepository(
                 completions.value + completion
             }
     }
-
-    override suspend fun toggleCompletionToday(habitId: Long) = toggleCompletion(habitId, today)
 }

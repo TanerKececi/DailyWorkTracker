@@ -6,13 +6,16 @@ Hilt.
 
 ## Features
 
-- **Today** — the habits scheduled for today, checked off with one tap, each showing its current
-  streak.
+- **Today** — the habits scheduled for the selected day, checked off with one tap, each showing its
+  streak as it stood that day.
+- **Any past day** — step back and forward a day at a time, or jump to any date with the picker, and
+  fill in a day you forgot to log. Future days cannot be selected or completed.
 - **All habits** — every habit regardless of schedule, including archived ones, where they can be
   edited, archived, or restored.
 - **Add / edit** — name, emoji, and a per-weekday schedule with an "every day" shortcut.
 - Streaks count consecutive **scheduled** days, so a Mon/Wed/Fri habit is not broken by an untouched
   Tuesday.
+- A habit never appears on days before it was created, so browsing back does not invent missed days.
 - Archiving is a soft delete: the habit leaves the list but its completion history survives.
 
 Everything is stored locally in Room. There is no account, no network, and no analytics.
@@ -42,6 +45,9 @@ A few decisions worth knowing:
   streaks possible.
 - **Dates are stored as epoch days.** The repository owns the `LocalDate` conversion, so the rest of
   the app never sees the encoding. `java.time` on `minSdk 24` works via core library desugaring.
+- **The repository never reads the clock.** Every date arrives as a parameter, which makes it
+  deterministic and leaves exactly one place — the ViewModel's selected date — deciding which day
+  the app is showing and writing to.
 - **ViewModels never hold a `Context`.** Anything needing one — localized weekday names, validation
   messages — travels as a string resource id and is resolved in the view layer.
 - **Schedule filtering happens in Kotlin, not SQL**, because a bitmask is far easier to test than a
@@ -99,8 +105,9 @@ away and back left the screen unwired.
 
 ## Known limitations
 
-- **Midnight rollover** — "today" is resolved when a screen starts observing. An app left open past
-  midnight keeps showing the previous day until the screen is revisited.
 - **The emoji field accepts any short text**, not strictly an emoji.
+- **Travelling west across a time zone** can move the device's date backwards. The selected day is
+  clamped to today when the screen resumes, so the app stays consistent, but a day selected before
+  the change becomes unreachable until the clock catches up.
 - **No reminders yet.** The habit model already carries a nullable reminder time so notifications can
   be added without a migration.

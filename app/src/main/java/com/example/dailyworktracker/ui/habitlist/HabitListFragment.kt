@@ -16,13 +16,20 @@ import androidx.navigation.fragment.findNavController
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.FragmentHabitListBinding
 import com.example.dailyworktracker.ui.addedithabit.AddEditHabitViewModel.Companion.NEW_HABIT_ID
+import com.example.dailyworktracker.ui.common.DateLabelFormatter
 import com.example.dailyworktracker.ui.common.UiState
 import com.example.dailyworktracker.ui.common.viewBinding
+import com.google.android.material.datepicker.CalendarConstraints
+import com.google.android.material.datepicker.DateValidatorPointBackward
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 
-/** Shows the habits scheduled for today and lets the user tick them off. */
+/** Shows the habits due on the selected day and lets the user tick them off, today or in the past. */
 @AndroidEntryPoint
 class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
     private val binding by viewBinding(FragmentHabitListBinding::bind)
@@ -41,10 +48,68 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         super.onViewCreated(view, savedInstanceState)
         applyWindowInsets()
         setUpToolbarMenu()
+        setUpDateBar()
         binding.recyclerHabits.adapter = habitAdapter
         binding.fabAddHabit.setOnClickListener { navigateToHabitEditor(NEW_HABIT_ID) }
         observeUiState()
+        observeSelectedDate()
     }
+
+    override fun onResume() {
+        super.onResume()
+        // Corrects the shown day when the app has been left open across midnight.
+        viewModel.onScreenResumed()
+    }
+
+    private fun setUpDateBar() =
+        with(binding) {
+            buttonPreviousDay.setOnClickListener { viewModel.onPreviousDayClicked() }
+            buttonNextDay.setOnClickListener { viewModel.onNextDayClicked() }
+            buttonJumpToToday.setOnClickListener { viewModel.onTodayClicked() }
+            buttonPickDate.setOnClickListener { showDatePicker() }
+        }
+
+    private fun showDatePicker() {
+        val today = viewModel.today()
+        val constraints =
+            CalendarConstraints.Builder()
+                // Completing a day that has not happened yet is meaningless, so cap at today.
+                .setValidator(DateValidatorPointBackward.before(today.plusDays(1).toUtcMillis()))
+                .setEnd(today.toUtcMillis())
+                .build()
+
+        MaterialDatePicker.Builder
+            .datePicker()
+            .setTitleText(R.string.date_picker_title)
+            .setCalendarConstraints(constraints)
+            .setSelection(viewModel.selectedDate.value.toUtcMillis())
+            .build()
+            .apply {
+                addOnPositiveButtonClickListener { millis ->
+                    viewModel.onDatePicked(millis.toLocalDateFromUtc())
+                }
+            }.show(childFragmentManager, DATE_PICKER_TAG)
+    }
+
+    private fun observeSelectedDate() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.selectedDate.collect(::renderSelectedDate)
+            }
+        }
+    }
+
+    private fun renderSelectedDate(date: LocalDate) =
+        with(binding) {
+            val today = viewModel.today()
+            val label = DateLabelFormatter.format(requireContext(), date, today)
+
+            buttonPickDate.text = label
+            toolbar.title = label
+            // Only shown off today, where it is the fastest way back.
+            buttonJumpToToday.isVisible = date != today
+            buttonNextDay.isEnabled = date.isBefore(today)
+        }
 
     private fun setUpToolbarMenu() =
         with(binding.toolbar) {
@@ -147,4 +212,17 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
             }
         }.show()
     }
+
+    private companion object {
+        const val DATE_PICKER_TAG = "date_picker"
+    }
 }
+
+/**
+ * MaterialDatePicker works in UTC milliseconds, while the rest of the app uses [LocalDate].
+ * These conversions are deliberately UTC-anchored on both sides so the round trip is lossless;
+ * using the local zone here would shift the picked day by one either side of midnight.
+ */
+private fun LocalDate.toUtcMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+private fun Long.toLocalDateFromUtc(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()

@@ -13,13 +13,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.time.DayOfWeek
-import java.time.LocalDate
 
 class AllHabitsViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val repository = FakeHabitRepository(today = LocalDate.of(2026, 8, 31)) // Monday.
+    private val repository = FakeHabitRepository()
 
     private fun viewModel() = AllHabitsViewModel(repository)
 

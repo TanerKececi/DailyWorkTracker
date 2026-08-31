@@ -17,6 +17,59 @@
             android:layout_height="?attr/actionBarSize"
             app:title="@string/habit_list_title" />
 
+        <!--
+          The date bar lives in the AppBarLayout rather than the content area so it stays on screen
+          in every UiState. If it were part of the content it would disappear on an empty past day,
+          leaving no control to navigate back.
+        -->
+        <LinearLayout
+            android:id="@+id/barDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="4dp"
+            android:paddingBottom="8dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonPreviousDay"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/date_previous_day"
+                app:icon="@drawable/ic_chevron_left" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonPickDate"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:contentDescription="@string/date_pick_day"
+                app:icon="@drawable/ic_calendar"
+                app:iconGravity="textStart"
+                tools:text="@string/date_today" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonNextDay"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/date_next_day"
+                app:icon="@drawable/ic_chevron_right" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonJumpToToday"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="@string/date_jump_to_today"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView

@@ -5,13 +5,10 @@ import com.example.dailyworktracker.data.local.dao.HabitDao
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.local.entity.HabitCompletion
 import com.example.dailyworktracker.data.model.TodayHabit
-import com.example.dailyworktracker.util.DateProvider
+import com.example.dailyworktracker.util.HabitVisibility
 import com.example.dailyworktracker.util.StreakCalculator
-import com.example.dailyworktracker.util.WeekdaySchedule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import javax.inject.Inject
@@ -23,44 +20,31 @@ class HabitRepositoryImpl
     constructor(
         private val habitDao: HabitDao,
         private val completionDao: HabitCompletionDao,
-        private val dateProvider: DateProvider,
     ) : HabitRepository {
-        /**
-         * Today is resolved inside [flow] so it is read when collection starts rather than when the
-         * flow is constructed. A collection running across midnight keeps the previous day until it is
-         * restarted, which is acceptable for v1 and is where a date-tick source would slot in later.
-         */
-        override fun observeTodaysHabits(): Flow<List<TodayHabit>> =
-            flow {
-                val today = dateProvider.today()
-                emitAll(
-                    combine(
-                        habitDao.observeHabitsWithStatus(today.toEpochDay()),
-                        completionDao.observeAllCompletions(),
-                    ) { habits, completions ->
-                        val datesByHabit =
-                            completions
-                                .groupBy({ it.habitId }, { LocalDate.ofEpochDay(it.date) })
-                                .mapValues { (_, dates) -> dates.toSet() }
+        override fun observeHabitsFor(date: LocalDate): Flow<List<TodayHabit>> =
+            combine(
+                habitDao.observeHabitsWithStatus(date.toEpochDay()),
+                completionDao.observeAllCompletions(),
+            ) { habits, completions ->
+                val datesByHabit =
+                    completions
+                        .groupBy({ it.habitId }, { LocalDate.ofEpochDay(it.date) })
+                        .mapValues { (_, dates) -> dates.toSet() }
 
-                        habits
-                            .filter {
-                                WeekdaySchedule.isScheduledOn(it.habit.scheduleDaysBitmask, today.dayOfWeek)
-                            }
-                            .map { habitWithStatus ->
-                                TodayHabit(
-                                    habit = habitWithStatus.habit,
-                                    isCompleted = habitWithStatus.isCompleted,
-                                    currentStreak =
-                                        StreakCalculator.currentStreak(
-                                            completedDates = datesByHabit[habitWithStatus.habit.id].orEmpty(),
-                                            scheduleDaysBitmask = habitWithStatus.habit.scheduleDaysBitmask,
-                                            today = today,
-                                        ),
-                                )
-                            }
-                    },
-                )
+                habits
+                    .filter { HabitVisibility.isActiveOn(it.habit, date) }
+                    .map { habitWithStatus ->
+                        TodayHabit(
+                            habit = habitWithStatus.habit,
+                            isCompleted = habitWithStatus.isCompleted,
+                            currentStreak =
+                                StreakCalculator.currentStreak(
+                                    completedDates = datesByHabit[habitWithStatus.habit.id].orEmpty(),
+                                    scheduleDaysBitmask = habitWithStatus.habit.scheduleDaysBitmask,
+                                    asOf = date,
+                                ),
+                        )
+                    }
             }
 
         override fun observeActiveHabitCount(): Flow<Int> = habitDao.observeActiveHabitCount()
@@ -99,6 +83,4 @@ class HabitRepositoryImpl
                 )
             }
         }
-
-        override suspend fun toggleCompletionToday(habitId: Long) = toggleCompletion(habitId, dateProvider.today())
     }

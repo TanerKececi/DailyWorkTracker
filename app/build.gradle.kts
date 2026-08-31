@@ -4,6 +4,15 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.navigation.safeargs.kotlin)
+    alias(libs.plugins.ktlint)
+}
+
+ktlint {
+    android = true
+    // Generated sources (ViewBinding, Safe Args, Hilt, Room) are not ours to format.
+    filter {
+        exclude { it.file.path.contains("/build/") }
+    }
 }
 
 android {
@@ -19,7 +28,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.example.dailyworktracker.HiltTestRunner"
     }
 
     buildFeatures {
@@ -31,7 +40,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -79,7 +88,12 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.navigation.testing)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
 }

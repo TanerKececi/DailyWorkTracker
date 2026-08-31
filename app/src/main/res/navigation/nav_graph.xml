@@ -15,6 +15,22 @@
             android:id="@+id/action_habitList_to_addEditHabit"
             app:destination="@id/addEditHabitFragment" />
 
+        <action
+            android:id="@+id/action_habitList_to_allHabits"
+            app:destination="@id/allHabitsFragment" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/allHabitsFragment"
+        android:name="com.example.dailyworktracker.ui.allhabits.AllHabitsFragment"
+        android:label="@string/all_habits_title"
+        tools:layout="@layout/fragment_all_habits">
+
+        <action
+            android:id="@+id/action_allHabits_to_addEditHabit"
+            app:destination="@id/addEditHabitFragment" />
+
     </fragment>
 
     <dialog

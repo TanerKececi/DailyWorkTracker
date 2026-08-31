@@ -51,7 +51,11 @@ class HabitRepositoryImpl @Inject constructor(
 
     override suspend fun updateHabit(habit: Habit) = habitDao.update(habit)
 
+    override fun observeAllHabits(): Flow<List<Habit>> = habitDao.observeAllHabits()
+
     override suspend fun archiveHabit(habitId: Long) = habitDao.archive(habitId)
+
+    override suspend fun unarchiveHabit(habitId: Long) = habitDao.unarchive(habitId)
 
     override suspend fun toggleCompletion(habitId: Long, date: LocalDate) {
         val epochDay = date.toEpochDay()

@@ -19,6 +19,9 @@ interface HabitRepository {
     /** Count of all non-archived habits, whatever their schedule. */
     fun observeActiveHabitCount(): Flow<Int>
 
+    /** Every habit, including archived ones, for the management screen. */
+    fun observeAllHabits(): Flow<List<Habit>>
+
     fun observeCompletionDates(habitId: Long): Flow<List<LocalDate>>
 
     suspend fun getHabit(habitId: Long): Habit?
@@ -29,6 +32,8 @@ interface HabitRepository {
 
     /** Soft delete: hides the habit while preserving its completion history. */
     suspend fun archiveHabit(habitId: Long)
+
+    suspend fun unarchiveHabit(habitId: Long)
 
     /** Marks [habitId] done on [date], or clears it if it was already done. */
     suspend fun toggleCompletion(habitId: Long, date: LocalDate)

@@ -15,7 +15,13 @@
     <!-- Habit row actions -->
     <string name="habit_action_edit">Edit</string>
     <string name="habit_action_archive">Archive</string>
+    <string name="habit_action_restore">Restore</string>
     <string name="habit_archived_message">%1$s archived</string>
+    <string name="habit_restored_message">%1$s restored</string>
+
+    <!-- All habits -->
+    <string name="all_habits_title">All habits</string>
+    <string name="all_habits_archived_badge">Archived</string>
 
     <!-- Schedule labels -->
     <string name="schedule_every_day">Every day</string>

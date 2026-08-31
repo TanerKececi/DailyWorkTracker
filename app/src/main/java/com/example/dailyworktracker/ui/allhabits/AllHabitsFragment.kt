@@ -1,4 +1,4 @@
-package com.example.dailyworktracker.ui.habitlist
+package com.example.dailyworktracker.ui.allhabits
 
 import android.os.Bundle
 import android.view.View
@@ -14,61 +14,40 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.dailyworktracker.R
-import com.example.dailyworktracker.databinding.FragmentHabitListBinding
-import com.example.dailyworktracker.ui.addedithabit.AddEditHabitViewModel.Companion.NEW_HABIT_ID
+import com.example.dailyworktracker.databinding.FragmentAllHabitsBinding
 import com.example.dailyworktracker.ui.common.UiState
 import com.example.dailyworktracker.ui.common.viewBinding
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
-/** Shows the habits scheduled for today and lets the user tick them off. */
+/**
+ * Lists every habit, archived included, so habits that do not repeat today are still reachable for
+ * editing, archiving and restoring.
+ */
 @AndroidEntryPoint
-class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
+class AllHabitsFragment : Fragment(R.layout.fragment_all_habits) {
 
-    private val binding by viewBinding(FragmentHabitListBinding::bind)
-    private val viewModel: HabitListViewModel by viewModels()
+    private val binding by viewBinding(FragmentAllHabitsBinding::bind)
+    private val viewModel: AllHabitsViewModel by viewModels()
 
-    private val habitAdapter = HabitListAdapter(
-        onToggleCompleted = { habitId -> viewModel.onHabitCheckedChanged(habitId) },
+    private val habitAdapter = AllHabitsAdapter(
         onMoreClicked = { item, anchor -> showHabitMenu(item, anchor) },
     )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         applyWindowInsets()
-        setUpToolbarMenu()
+        binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
         binding.recyclerHabits.adapter = habitAdapter
-        binding.fabAddHabit.setOnClickListener { navigateToHabitEditor(NEW_HABIT_ID) }
         observeUiState()
     }
 
-    private fun setUpToolbarMenu() = with(binding.toolbar) {
-        inflateMenu(R.menu.menu_habit_list)
-        setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.action_all_habits -> {
-                    findNavController().navigate(
-                        HabitListFragmentDirections.actionHabitListToAllHabits(),
-                    )
-                    true
-                }
-
-                else -> false
-            }
-        }
+    override fun onDestroyView() {
+        binding.recyclerHabits.adapter = null
+        super.onDestroyView()
     }
 
-    private fun navigateToHabitEditor(habitId: Long) {
-        findNavController().navigate(
-            HabitListFragmentDirections.actionHabitListToAddEditHabit(habitId),
-        )
-    }
-
-    /**
-     * The app draws edge to edge, so keep content clear of the gesture bar. Only the bottom inset
-     * is applied here; the AppBarLayout already consumes the top one via `fitsSystemWindows`.
-     */
     private fun applyWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             val bottom = insets.getInsets(
@@ -79,12 +58,6 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         }
     }
 
-    override fun onDestroyView() {
-        // The adapter outlives the view here, so drop the RecyclerView's reference to it.
-        binding.recyclerHabits.adapter = null
-        super.onDestroyView()
-    }
-
     private fun observeUiState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -93,7 +66,7 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         }
     }
 
-    private fun render(state: UiState<List<HabitListItemUiModel>>) = with(binding) {
+    private fun render(state: UiState<List<AllHabitItemUiModel>>) = with(binding) {
         progressLoading.isVisible = state is UiState.Loading
         recyclerHabits.isVisible = state is UiState.Success
         groupEmpty.isVisible = state is UiState.Empty
@@ -113,23 +86,33 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         }
     }
 
-    private fun showHabitMenu(item: HabitListItemUiModel, anchor: View) {
+    private fun showHabitMenu(item: AllHabitItemUiModel, anchor: View) {
         PopupMenu(requireContext(), anchor).apply {
-            inflate(R.menu.menu_habit_item)
+            inflate(R.menu.menu_all_habit_item)
+            menu.findItem(R.id.action_toggle_archive).setTitle(
+                if (item.isArchived) R.string.habit_action_restore else R.string.habit_action_archive,
+            )
             setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.action_edit_habit -> {
-                        navigateToHabitEditor(item.id)
+                        findNavController().navigate(
+                            AllHabitsFragmentDirections.actionAllHabitsToAddEditHabit(item.id),
+                        )
                         true
                     }
 
-                    R.id.action_archive_habit -> {
-                        viewModel.onHabitArchived(item.id)
+                    R.id.action_toggle_archive -> {
+                        viewModel.onArchiveToggled(item.id, item.isArchived)
+                        val message = if (item.isArchived) {
+                            R.string.habit_restored_message
+                        } else {
+                            R.string.habit_archived_message
+                        }
                         Snackbar.make(
                             binding.root,
-                            getString(R.string.habit_archived_message, item.title),
+                            getString(message, item.title),
                             Snackbar.LENGTH_SHORT,
-                        ).setAnchorView(binding.fabAddHabit).show()
+                        ).show()
                         true
                     }
 

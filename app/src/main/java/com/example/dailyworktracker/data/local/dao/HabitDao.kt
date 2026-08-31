@@ -21,6 +21,13 @@ interface HabitDao {
     @Query("UPDATE habits SET isArchived = 1 WHERE id = :habitId")
     suspend fun archive(habitId: Long)
 
+    @Query("UPDATE habits SET isArchived = 0 WHERE id = :habitId")
+    suspend fun unarchive(habitId: Long)
+
+    /** Every habit regardless of schedule or archived state, active ones first. */
+    @Query("SELECT * FROM habits ORDER BY isArchived ASC, createdAt ASC")
+    fun observeAllHabits(): Flow<List<Habit>>
+
     @Query("SELECT * FROM habits WHERE id = :habitId")
     suspend fun getById(habitId: Long): Habit?
 

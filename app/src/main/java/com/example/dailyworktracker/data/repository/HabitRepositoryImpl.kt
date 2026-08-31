@@ -55,6 +55,8 @@ class HabitRepositoryImpl
 
         override suspend fun getHabit(habitId: Long): Habit? = habitDao.getById(habitId)
 
+        override fun observeHabit(habitId: Long): Flow<Habit?> = habitDao.observeById(habitId)
+
         override suspend fun addHabit(habit: Habit): Long = habitDao.insert(habit)
 
         override suspend fun updateHabit(habit: Habit) = habitDao.update(habit)

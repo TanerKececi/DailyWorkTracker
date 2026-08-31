@@ -30,6 +30,9 @@ interface HabitRepository {
 
     suspend fun getHabit(habitId: Long): Habit?
 
+    /** Emits null once the habit no longer exists, so a detail screen can close itself. */
+    fun observeHabit(habitId: Long): Flow<Habit?>
+
     suspend fun addHabit(habit: Habit): Long
 
     suspend fun updateHabit(habit: Habit)

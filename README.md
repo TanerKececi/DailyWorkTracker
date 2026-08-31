@@ -12,6 +12,8 @@ Hilt.
   fill in a day you forgot to log. Future days cannot be selected or completed.
 - **All habits** — every habit regardless of schedule, including archived ones, where they can be
   edited, archived, or restored.
+- **History** — per habit: current and best streak, completion rate, and a grid of recent weeks
+  showing which days were kept, missed, or not due.
 - **Add / edit** — name, emoji, and a per-weekday schedule with an "every day" shortcut.
 - Streaks count consecutive **scheduled** days, so a Mon/Wed/Fri habit is not broken by an untouched
   Tuesday.

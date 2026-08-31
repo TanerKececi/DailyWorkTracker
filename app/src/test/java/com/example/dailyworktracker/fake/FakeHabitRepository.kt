@@ -86,6 +86,8 @@ class FakeHabitRepository : HabitRepository {
 
     override suspend fun getHabit(habitId: Long): Habit? = habits.value.find { it.id == habitId }
 
+    override fun observeHabit(habitId: Long): Flow<Habit?> = habits.map { list -> list.find { it.id == habitId } }
+
     override suspend fun addHabit(habit: Habit): Long {
         val id = nextId++
         habits.value += habit.copy(id = id)

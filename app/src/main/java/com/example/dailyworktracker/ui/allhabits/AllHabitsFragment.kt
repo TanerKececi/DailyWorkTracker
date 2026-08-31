@@ -102,6 +102,13 @@ class AllHabitsFragment : Fragment(R.layout.fragment_all_habits) {
             )
             setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
+                    R.id.action_habit_history -> {
+                        findNavController().navigate(
+                            AllHabitsFragmentDirections.actionAllHabitsToHabitDetail(item.id),
+                        )
+                        true
+                    }
+
                     R.id.action_edit_habit -> {
                         findNavController().navigate(
                             AllHabitsFragmentDirections.actionAllHabitsToAddEditHabit(item.id),

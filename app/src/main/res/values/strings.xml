@@ -31,6 +31,27 @@
     <string name="habit_archived_message">%1$s archived</string>
     <string name="habit_restored_message">%1$s restored</string>
 
+    <!-- Habit detail -->
+    <string name="habit_detail_title">History</string>
+    <string name="habit_action_history">History</string>
+    <string name="habit_detail_missing_title">Habit unavailable</string>
+    <string name="habit_detail_missing_message">This habit no longer exists.</string>
+    <string name="habit_detail_current_streak">Current streak</string>
+    <string name="habit_detail_longest_streak">Best streak</string>
+    <string name="habit_detail_completion_rate">Completion</string>
+    <string name="habit_detail_days_value">%1$d d</string>
+    <string name="habit_detail_rate_value">%1$d%%</string>
+    <plurals name="habit_detail_last_weeks">
+        <item quantity="one">This week</item>
+        <item quantity="other">Last %1$d weeks</item>
+    </plurals>
+    <plurals name="habit_detail_total_completions">
+        <item quantity="one">%1$d day completed in total</item>
+        <item quantity="other">%1$d days completed in total</item>
+    </plurals>
+    <string name="habit_detail_legend_missed">Missed</string>
+    <string name="habit_detail_legend_done">Done</string>
+
     <!-- All habits -->
     <string name="all_habits_title">All habits</string>
     <string name="all_habits_archived_badge">Archived</string>

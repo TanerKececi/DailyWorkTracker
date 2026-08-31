@@ -192,6 +192,13 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
             inflate(R.menu.menu_habit_item)
             setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
+                    R.id.action_habit_history -> {
+                        findNavController().navigate(
+                            HabitListFragmentDirections.actionHabitListToHabitDetail(item.id),
+                        )
+                        true
+                    }
+
                     R.id.action_edit_habit -> {
                         navigateToHabitEditor(item.id)
                         true

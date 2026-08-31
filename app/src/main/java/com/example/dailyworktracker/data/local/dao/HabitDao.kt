@@ -30,6 +30,10 @@ interface HabitDao {
     @Query("SELECT * FROM habits WHERE id = :habitId")
     suspend fun getById(habitId: Long): Habit?
 
+    /** Observed rather than fetched once, so the detail screen follows edits made elsewhere. */
+    @Query("SELECT * FROM habits WHERE id = :habitId")
+    fun observeById(habitId: Long): Flow<Habit?>
+
     /**
      * How many habits exist at all, regardless of schedule. Lets the UI tell "you have not created
      * anything yet" apart from "nothing is due today".

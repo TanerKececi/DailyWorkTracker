@@ -16,6 +16,7 @@ Hilt.
   showing which days were kept, missed, or not due.
 - **Reminders** — an optional time per habit, delivered as a notification on the days that habit
   repeats, and only when it has not already been ticked off.
+- **Home screen widget** — the same list, glanceable, with a tap on a row to tick it off.
 - **Add / edit** — name, emoji, a per-weekday schedule with an "every day" shortcut, and the
   reminder.
 - Streaks count consecutive **scheduled** days, so a Mon/Wed/Fri habit is not broken by an untouched
@@ -35,6 +36,7 @@ data/
   model/     what the repository hands upward
   repository/HabitRepository (interface) + impl
 reminder/    scheduling reminders and posting them
+widget/      the home screen widget: provider, row factory, tap handling
 di/          Hilt modules
 util/        pure logic: weekday bitmask, streaks, next reminder occurrence, date provider
 ```
@@ -66,10 +68,10 @@ A few decisions worth knowing:
 - **Whether to notify is decided when the job fires**, not when it was scheduled. By then the habit
   may have been ticked off, archived, moved onto other weekdays or deleted, so a stale pending job
   costs a wasted wake-up rather than a wrong notification.
-- **Reminder scheduling hangs off the repository's write path**, not off the screens that trigger
-  the writes. The repository is the one place a habit can change, so it is the only place where the
-  pending reminder and the stored habit cannot drift apart — archiving alone is reachable from two
-  screens.
+- **Reminder scheduling and widget refreshes hang off the repository's write path**, not off
+  the screens that trigger the writes. The repository is the one place a habit or a
+  completion can change, so it is the only place where what is stored and what the outside
+  world shows cannot drift apart — archiving alone is reachable from two screens.
 
 ## Requirements
 
@@ -129,6 +131,13 @@ screen that reaches the scheduler dies on injection, and only an on-device test 
 Note that `connectedDebugAndroidTest` uninstalls the app afterwards, which wipes the database. Expect
 to re-seed sample data (below) after running it.
 
+### Verifying the widget
+
+Long press the home screen, choose **Widgets**, and drag the DailyWorkTracker widget out.
+The day-rollover path is worth exercising by hand at least once: in Settings, turn
+**Automatic date and time** off and move the date forward a day. The widget should redraw on
+its own, drop habits that do not repeat on the new weekday, and recompute the streaks.
+
 ### Verifying reminders without waiting
 
 A reminder scheduled for tomorrow morning is awkward to test by hand. The pending jobs and their
@@ -154,6 +163,30 @@ initializer and `DailyWorkTrackerApp` supplies the `Configuration` instead.
 the request arrives with an obvious reason attached and someone who never sets a reminder is never
 asked. If it is refused, the editor says the reminder will not be delivered instead of silently
 saving one that never arrives.
+
+## Home screen widget
+
+Built on `RemoteViews` rather than Glance. Glance would pull the Compose compiler and
+runtime into a project that is otherwise XML views throughout, for one surface. The cost is
+that RemoteViews supports only a fixed set of views — no ConstraintLayout, no
+MaterialCardView, and no CheckBox before API 31 — so the widget has its own layouts and an
+ImageView standing in for the checkbox.
+
+It also cannot resolve `?attr/colorSurface` and the rest of the Material theme, because the
+launcher draws it and not our Activity. The palette is therefore written out as concrete
+Material 3 baseline colours, with a `values-night` copy so the widget still follows the
+system's dark mode.
+
+Tapping a row ticks that habit off; tapping the header opens the app. It is that way round
+because a row inside a RemoteViews collection cannot carry its own `PendingIntent` — every
+row fills in a single template the provider sets on the list — so there is exactly one
+component any row tap can reach. Letting part of a row open the app instead would mean the
+receiver calling `startActivity` from the background, which Android 10 onwards blocks.
+
+That tap goes to `HabitWidgetActionReceiver`, which is deliberately *not* exported, unlike
+the provider, which has to be so the AppWidget framework can broadcast to it. A
+`PendingIntent` carries the identity of the app that created it, so the launcher can still
+fire an unexported receiver and nothing else can tick a habit off.
 
 ## Sample data (debug builds)
 
@@ -184,3 +217,8 @@ is destructive, and hidden unless `BuildConfig.DEBUG` — see `data/sample/Sampl
   the change becomes unreachable until the clock catches up.
 - **A reminder cannot be acted on from the notification.** Tapping it opens the app; there is no
   "mark done" action, which would need a receiver and a second write path into completions.
+- **The widget always shows today**, and has no per-instance configuration. Its rows tick habits
+  off; only the header opens the app, for the RemoteViews reason described above.
+- **The widget does not use Android 12 dynamic colour.** Its palette is the Material 3 baseline
+  written out as literal colours, because a widget cannot resolve the app's theme attributes, so it
+  will not pick up the wallpaper-derived colours the launcher uses around it.

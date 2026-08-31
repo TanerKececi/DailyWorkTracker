@@ -105,6 +105,20 @@ The instrumentation suite covers a view-lifecycle regression that JVM tests stru
 reach: the ViewBinding delegate once handed a stale binding to a freshly created view, so navigating
 away and back left the screen unwired.
 
+Note that `connectedDebugAndroidTest` uninstalls the app afterwards, which wipes the database. Expect
+to re-seed sample data (below) after running it.
+
+## Sample data (debug builds)
+
+A single freshly created habit makes the history grid, streaks and completion rate impossible to
+judge. In a debug build, the overflow menu on the today screen has **Insert sample data**, which
+replaces the database with a few months of plausible history: a near-perfect daily habit, a
+Mon/Wed/Fri one, a patchy one, weekend-only, weekdays-only, one started two weeks ago, and an
+archived one. Each has its own adherence rate, which is what gives the grid real texture.
+
+The generator is seeded, so the same data comes back every run and screenshots stay comparable. It
+is destructive, and hidden unless `BuildConfig.DEBUG` — see `data/sample/SampleDataSeeder.kt`.
+
 ## Known limitations
 
 - **The emoji field accepts any short text**, not strictly an emoji.

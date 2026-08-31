@@ -2,6 +2,7 @@ package com.example.dailyworktracker.ui.habitlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dailyworktracker.R
 import com.example.dailyworktracker.data.model.HabitWithStatus
 import com.example.dailyworktracker.data.repository.HabitRepository
 import com.example.dailyworktracker.ui.common.UiState
@@ -9,7 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,14 +21,26 @@ class HabitListViewModel @Inject constructor(
 ) : ViewModel() {
 
     val uiState: StateFlow<UiState<List<HabitListItemUiModel>>> =
-        repository.observeTodaysHabits()
-            .map { habits ->
-                if (habits.isEmpty()) {
-                    UiState.Empty
-                } else {
-                    UiState.Success(habits.map(HabitWithStatus::toUiModel))
-                }
+        combine(
+            repository.observeTodaysHabits(),
+            repository.observeActiveHabitCount(),
+        ) { todaysHabits, activeHabitCount ->
+            when {
+                todaysHabits.isNotEmpty() ->
+                    UiState.Success(todaysHabits.map(HabitWithStatus::toUiModel))
+
+                // Habits exist, none is due today: saying "no habits yet" would be wrong.
+                activeHabitCount > 0 -> UiState.Empty(
+                    titleRes = R.string.habit_list_nothing_today_title,
+                    messageRes = R.string.habit_list_nothing_today_message,
+                )
+
+                else -> UiState.Empty(
+                    titleRes = R.string.habit_list_empty_title,
+                    messageRes = R.string.habit_list_empty_message,
+                )
             }
+        }
             .catch { emit(UiState.Error(it)) }
             .stateIn(
                 scope = viewModelScope,

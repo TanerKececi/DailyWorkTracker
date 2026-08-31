@@ -12,8 +12,10 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.FragmentHabitListBinding
+import com.example.dailyworktracker.ui.addedithabit.AddEditHabitViewModel.Companion.NEW_HABIT_ID
 import com.example.dailyworktracker.ui.common.UiState
 import com.example.dailyworktracker.ui.common.viewBinding
 import com.google.android.material.snackbar.Snackbar
@@ -36,7 +38,14 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         super.onViewCreated(view, savedInstanceState)
         applyWindowInsets()
         binding.recyclerHabits.adapter = habitAdapter
+        binding.fabAddHabit.setOnClickListener { navigateToHabitEditor(NEW_HABIT_ID) }
         observeUiState()
+    }
+
+    private fun navigateToHabitEditor(habitId: Long) {
+        findNavController().navigate(
+            HabitListFragmentDirections.actionHabitListToAddEditHabit(habitId),
+        )
     }
 
     /**
@@ -75,8 +84,15 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
 
         when (state) {
             is UiState.Success -> habitAdapter.submitList(state.data)
+
+            is UiState.Empty -> {
+                habitAdapter.submitList(emptyList())
+                textEmptyTitle.setText(state.titleRes)
+                textEmptyMessage.setText(state.messageRes)
+            }
+
             is UiState.Error -> textErrorMessage.text = state.throwable.localizedMessage
-            UiState.Loading, UiState.Empty -> habitAdapter.submitList(emptyList())
+            UiState.Loading -> habitAdapter.submitList(emptyList())
         }
     }
 
@@ -85,6 +101,11 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
             inflate(R.menu.menu_habit_item)
             setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
+                    R.id.action_edit_habit -> {
+                        navigateToHabitEditor(item.id)
+                        true
+                    }
+
                     R.id.action_archive_habit -> {
                         viewModel.onHabitArchived(item.id)
                         Snackbar.make(

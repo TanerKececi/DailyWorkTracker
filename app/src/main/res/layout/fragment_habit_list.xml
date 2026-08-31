@@ -55,8 +55,8 @@
             android:id="@+id/textEmptyTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/habit_list_empty_title"
-            android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            tools:text="@string/habit_list_empty_title" />
 
         <TextView
             android:id="@+id/textEmptyMessage"
@@ -64,9 +64,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:text="@string/habit_list_empty_message"
             android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant" />
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="@string/habit_list_empty_message" />
 
     </LinearLayout>
 

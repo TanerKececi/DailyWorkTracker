@@ -39,6 +39,8 @@ class HabitRepositoryImpl @Inject constructor(
         )
     }
 
+    override fun observeActiveHabitCount(): Flow<Int> = habitDao.observeActiveHabitCount()
+
     override fun observeCompletionDates(habitId: Long): Flow<List<LocalDate>> =
         completionDao.observeCompletionDates(habitId)
             .map { dates -> dates.map(LocalDate::ofEpochDay) }

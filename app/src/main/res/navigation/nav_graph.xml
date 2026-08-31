@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/habitListFragment">
 
@@ -8,7 +9,26 @@
         android:id="@+id/habitListFragment"
         android:name="com.example.dailyworktracker.ui.habitlist.HabitListFragment"
         android:label="@string/habit_list_title"
-        tools:layout="@layout/fragment_habit_list"
-        xmlns:tools="http://schemas.android.com/tools" />
+        tools:layout="@layout/fragment_habit_list">
+
+        <action
+            android:id="@+id/action_habitList_to_addEditHabit"
+            app:destination="@id/addEditHabitFragment" />
+
+    </fragment>
+
+    <dialog
+        android:id="@+id/addEditHabitFragment"
+        android:name="com.example.dailyworktracker.ui.addedithabit.AddEditHabitFragment"
+        android:label="@string/add_habit_title"
+        tools:layout="@layout/bottomsheet_add_edit_habit">
+
+        <!-- -1 means "create a new habit"; any other value edits that habit. -->
+        <argument
+            android:name="habitId"
+            android:defaultValue="-1L"
+            app:argType="long" />
+
+    </dialog>
 
 </navigation>

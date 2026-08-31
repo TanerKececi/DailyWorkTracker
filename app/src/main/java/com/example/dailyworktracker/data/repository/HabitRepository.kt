@@ -16,6 +16,9 @@ interface HabitRepository {
     /** Active habits scheduled for today, each flagged with whether it is already done. */
     fun observeTodaysHabits(): Flow<List<HabitWithStatus>>
 
+    /** Count of all non-archived habits, whatever their schedule. */
+    fun observeActiveHabitCount(): Flow<Int>
+
     fun observeCompletionDates(habitId: Long): Flow<List<LocalDate>>
 
     suspend fun getHabit(habitId: Long): Habit?

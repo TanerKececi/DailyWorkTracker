@@ -5,16 +5,32 @@
     <string name="habit_list_title">Today</string>
     <string name="habit_list_empty_title">No habits yet</string>
     <string name="habit_list_empty_message">Add a habit to start tracking your daily routine.</string>
+    <string name="habit_list_nothing_today_title">Nothing scheduled today</string>
+    <string name="habit_list_nothing_today_message">None of your habits repeat on this day.</string>
     <string name="habit_list_error_title">Something went wrong</string>
     <string name="habit_list_add_habit">Add habit</string>
     <string name="habit_list_more_options">More options for %1$s</string>
     <string name="habit_completed_checkbox">Mark %1$s as done today</string>
 
     <!-- Habit row actions -->
+    <string name="habit_action_edit">Edit</string>
     <string name="habit_action_archive">Archive</string>
     <string name="habit_archived_message">%1$s archived</string>
 
     <!-- Schedule labels -->
     <string name="schedule_every_day">Every day</string>
     <string name="schedule_no_days">No days selected</string>
+
+    <!-- Add / edit habit -->
+    <string name="add_habit_title">New habit</string>
+    <string name="edit_habit_title">Edit habit</string>
+    <string name="add_habit_name_label">Habit name</string>
+    <string name="add_habit_name_hint">e.g. Brush teeth</string>
+    <string name="add_habit_emoji_label">Icon</string>
+    <string name="add_habit_schedule_label">Repeat on</string>
+    <string name="add_habit_every_day">Every day</string>
+    <string name="add_habit_save">Save</string>
+    <string name="add_habit_cancel">Cancel</string>
+    <string name="add_habit_error_empty_title">Enter a habit name</string>
+    <string name="add_habit_error_no_days">Pick at least one day</string>
 </resources>

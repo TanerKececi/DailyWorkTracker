@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  Filter-styled chip for the weekday picker. Inflated rather than constructed in code because the
+  Material filter style (which draws the selected checkmark) can only be applied via a layout.
+-->
+<com.google.android.material.chip.Chip xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Widget.Material3.Chip.Filter"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:checkable="true" />

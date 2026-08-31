@@ -13,5 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+# Kotlin compiler scratch output
+.kotlin/
 # Machine-local Claude Code settings
 .claude/settings.local.json

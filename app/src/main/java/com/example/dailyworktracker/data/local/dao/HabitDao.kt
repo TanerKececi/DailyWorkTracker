@@ -25,6 +25,13 @@ interface HabitDao {
     suspend fun getById(habitId: Long): Habit?
 
     /**
+     * How many habits exist at all, regardless of schedule. Lets the UI tell "you have not created
+     * anything yet" apart from "nothing is due today".
+     */
+    @Query("SELECT COUNT(*) FROM habits WHERE isArchived = 0")
+    fun observeActiveHabitCount(): Flow<Int>
+
+    /**
      * Observes all active habits, each flagged with whether it was completed on [date]
      * (a `LocalDate.toEpochDay()` value).
      *

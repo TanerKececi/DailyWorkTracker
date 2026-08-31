@@ -86,6 +86,10 @@ dependencies {
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.fragment.ktx)
 
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     testImplementation(libs.junit)
@@ -98,5 +102,6 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.navigation.testing)
     androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.androidx.work.testing)
     kspAndroidTest(libs.hilt.compiler)
 }

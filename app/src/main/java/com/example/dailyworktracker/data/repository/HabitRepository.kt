@@ -30,6 +30,17 @@ interface HabitRepository {
 
     suspend fun getHabit(habitId: Long): Habit?
 
+    /**
+     * Whether [habitId] was already ticked off on [date].
+     *
+     * A one-shot read rather than a Flow: the reminder worker asks once, at the moment it
+     * wakes, and has nothing to keep watching for.
+     */
+    suspend fun isCompletedOn(
+        habitId: Long,
+        date: LocalDate,
+    ): Boolean
+
     /** Emits null once the habit no longer exists, so a detail screen can close itself. */
     fun observeHabit(habitId: Long): Flow<Habit?>
 

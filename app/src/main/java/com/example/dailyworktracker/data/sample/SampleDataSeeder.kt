@@ -4,10 +4,13 @@ import com.example.dailyworktracker.data.local.dao.HabitCompletionDao
 import com.example.dailyworktracker.data.local.dao.HabitDao
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.local.entity.HabitCompletion
+import com.example.dailyworktracker.reminder.HabitReminderScheduler
 import com.example.dailyworktracker.util.DateProvider
 import com.example.dailyworktracker.util.WeekdaySchedule
+import com.example.dailyworktracker.util.withReminderTime
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,6 +31,7 @@ class SampleDataSeeder
         private val habitDao: HabitDao,
         private val completionDao: HabitCompletionDao,
         private val dateProvider: DateProvider,
+        private val reminderScheduler: HabitReminderScheduler,
     ) {
         suspend fun seed() {
             habitDao.deleteAll()
@@ -37,16 +41,18 @@ class SampleDataSeeder
 
             SAMPLES.forEach { sample ->
                 val startedOn = today.minusWeeks(sample.weeksOfHistory)
-                val habitId =
-                    habitDao.insert(
-                        Habit(
-                            title = sample.title,
-                            emoji = sample.emoji,
-                            scheduleDaysBitmask = sample.schedule,
-                            createdAt = startedOn.toEpochMilli(),
-                            isArchived = sample.isArchived,
-                        ),
-                    )
+                val habit =
+                    Habit(
+                        title = sample.title,
+                        emoji = sample.emoji,
+                        scheduleDaysBitmask = sample.schedule,
+                        createdAt = startedOn.toEpochMilli(),
+                        isArchived = sample.isArchived,
+                    ).withReminderTime(sample.reminderTime)
+                val habitId = habitDao.insert(habit)
+                // Inserted straight through the DAO, so the reminder has to be scheduled here
+                // too; the repository, which normally does it, is bypassed by this tool.
+                reminderScheduler.schedule(habit.copy(id = habitId))
 
                 generateSequence(startedOn) { it.plusDays(1) }
                     .takeWhile { !it.isAfter(today) }
@@ -75,6 +81,8 @@ class SampleDataSeeder
             val weeksOfHistory: Long,
             /** Chance a scheduled day was kept, which is what gives each habit its own texture. */
             val adherence: Float,
+            /** A couple of samples carry one so reminders are visible without setting one up. */
+            val reminderTime: LocalTime? = null,
             val isArchived: Boolean = false,
         )
 
@@ -102,9 +110,9 @@ class SampleDataSeeder
             val SAMPLES =
                 listOf(
                     // Near perfect: shows a long streak and a dense grid.
-                    Sample("Brush teeth", "🪥", WeekdaySchedule.EVERY_DAY, 14, 0.97f),
+                    Sample("Brush teeth", "🪥", WeekdaySchedule.EVERY_DAY, 14, 0.97f, LocalTime.of(7, 30)),
                     // Partial schedule: proves the grid leaves off-days blank.
-                    Sample("Do sport", "🏃", MON_WED_FRI, 12, 0.78f),
+                    Sample("Do sport", "🏃", MON_WED_FRI, 12, 0.78f, LocalTime.of(18, 0)),
                     // Patchy: the interesting case for streaks and completion rate.
                     Sample("Wash dishes", "🍽", WeekdaySchedule.EVERY_DAY, 10, 0.55f),
                     Sample("Clean the house", "🧹", WEEKEND, 12, 0.7f),

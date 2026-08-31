@@ -1,22 +1,26 @@
 package com.example.dailyworktracker.util
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Supplies the current date.
+ * Supplies the current date and time.
  *
- * Indirecting `LocalDate.now()` behind an interface keeps "what day is it" injectable, so tests can
- * pin today to a fixed date instead of depending on the clock of the machine running them.
+ * Indirecting the clock behind an interface keeps "what time is it" injectable, so tests can pin the
+ * moment instead of depending on the machine running them. [now] is the single primitive: deriving
+ * [today] from it means the two can never disagree about which day it is.
  */
 interface DateProvider {
-    fun today(): LocalDate
+    fun now(): LocalDateTime
+
+    fun today(): LocalDate = now().toLocalDate()
 }
 
 @Singleton
 class SystemDateProvider
     @Inject
     constructor() : DateProvider {
-        override fun today(): LocalDate = LocalDate.now()
+        override fun now(): LocalDateTime = LocalDateTime.now()
     }

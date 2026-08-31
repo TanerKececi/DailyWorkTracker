@@ -1,10 +1,15 @@
 package com.example.dailyworktracker.ui.addedithabit
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
@@ -43,6 +48,16 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
 
     /** Guards against the chip listeners firing while state is being written back into the views. */
     private var isBindingState = false
+
+    /**
+     * Asked for the moment the user switches a reminder on, rather than at app start: the
+     * request then has an obvious reason attached to it, and someone who never sets a
+     * reminder is never asked at all.
+     */
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+            renderReminder(viewModel.uiState.value)
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -96,7 +111,9 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
                 if (!isBindingState) viewModel.onEveryDayToggled(isChecked)
             }
             switchReminder.setOnCheckedChangeListener { _, isChecked ->
-                if (!isBindingState) viewModel.onReminderEnabledChanged(isChecked)
+                if (isBindingState) return@setOnCheckedChangeListener
+                viewModel.onReminderEnabledChanged(isChecked)
+                if (isChecked) requestNotificationPermissionIfNeeded()
             }
             buttonReminderTime.setOnClickListener { showTimePicker() }
             buttonSave.setOnClickListener { viewModel.onSaveClicked() }
@@ -174,7 +191,7 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
             }
             switchEveryDay.isChecked = WeekdaySchedule.isEveryDay(state.scheduleDaysBitmask)
 
-            renderReminder(state.isReminderEnabled, state.reminderTime)
+            renderReminder(state)
 
             inputLayoutTitle.error = state.titleError?.let(::getString)
             textScheduleError.isVisible = state.scheduleError != null
@@ -185,18 +202,37 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
             isBindingState = false
         }
 
-    private fun renderReminder(
-        isEnabled: Boolean,
-        time: LocalTime,
-    ) = with(binding) {
-        switchReminder.isChecked = isEnabled
-        buttonReminderTime.isVisible = isEnabled
-
-        val formatted = TimeFormatter.format(requireContext(), time)
-        buttonReminderTime.text = formatted
-        buttonReminderTime.contentDescription =
-            getString(R.string.add_habit_reminder_time_description, formatted)
+    override fun onResume() {
+        super.onResume()
+        // Notifications may have been turned on or off in Settings while the sheet was open.
+        renderReminder(viewModel.uiState.value)
     }
+
+    private fun renderReminder(state: AddEditHabitUiState) =
+        with(binding) {
+            switchReminder.isChecked = state.isReminderEnabled
+            buttonReminderTime.isVisible = state.isReminderEnabled
+            textReminderWarning.isVisible =
+                state.isReminderEnabled && !canPostNotifications()
+
+            val formatted = TimeFormatter.format(requireContext(), state.reminderTime)
+            buttonReminderTime.text = formatted
+            buttonReminderTime.contentDescription =
+                getString(R.string.add_habit_reminder_time_description, formatted)
+        }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (canPostNotifications()) return
+        requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    /** Below API 33 notifications need no grant, so there is nothing to ask for. */
+    private fun canPostNotifications(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
 
     private companion object {
         const val TIME_PICKER_TAG = "reminder_time_picker"

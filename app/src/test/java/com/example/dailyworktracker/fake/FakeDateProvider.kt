@@ -2,6 +2,7 @@ package com.example.dailyworktracker.fake
 
 import com.example.dailyworktracker.util.DateProvider
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * A clock tests control.
@@ -10,12 +11,18 @@ import java.time.LocalDate
  * test simulate the calendar turning over without touching the machine clock.
  */
 class FakeDateProvider(
-    private var today: LocalDate = MONDAY,
+    private var now: LocalDateTime = MONDAY.atStartOfDay(),
 ) : DateProvider {
-    override fun today(): LocalDate = today
+    constructor(today: LocalDate) : this(today.atStartOfDay())
+
+    override fun now(): LocalDateTime = now
 
     fun advanceTo(date: LocalDate) {
-        today = date
+        now = date.atStartOfDay()
+    }
+
+    fun advanceTo(dateTime: LocalDateTime) {
+        now = dateTime
     }
 
     companion object {

@@ -86,6 +86,11 @@ class FakeHabitRepository : HabitRepository {
 
     override suspend fun getHabit(habitId: Long): Habit? = habits.value.find { it.id == habitId }
 
+    override suspend fun isCompletedOn(
+        habitId: Long,
+        date: LocalDate,
+    ): Boolean = Completion(habitId, date) in completions.value
+
     override fun observeHabit(habitId: Long): Flow<Habit?> = habits.map { list -> list.find { it.id == habitId } }
 
     override suspend fun addHabit(habit: Habit): Long {

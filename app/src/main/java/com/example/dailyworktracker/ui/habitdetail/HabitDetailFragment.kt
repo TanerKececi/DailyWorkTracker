@@ -1,5 +1,6 @@
 package com.example.dailyworktracker.ui.habitdetail
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -58,6 +59,7 @@ class HabitDetailFragment : Fragment(R.layout.fragment_habit_detail) {
         binding.recyclerHeatmap.layoutManager = GridLayoutManager(requireContext(), HabitDetailViewModel.COLUMNS)
         binding.recyclerHeatmap.adapter = heatmapAdapter
         addWeekdayHeader()
+        tintLegend()
     }
 
     private fun addWeekdayHeader() {
@@ -68,6 +70,15 @@ class HabitDetailFragment : Fragment(R.layout.fragment_habit_detail) {
         DayOfWeek.entries.forEach { day ->
             header.addView(headerLabel(day.getDisplayName(TextStyle.NARROW, Locale.getDefault())))
         }
+    }
+
+    /** Tinted from the adapter so the key always matches the boxes the grid draws. */
+    private fun tintLegend() {
+        val context = requireContext()
+        binding.legendHeatmap.swatchDone.backgroundTintList =
+            ColorStateList.valueOf(HeatmapAdapter.completedTint(context))
+        binding.legendHeatmap.swatchMissed.backgroundTintList =
+            ColorStateList.valueOf(HeatmapAdapter.missedTint(context))
     }
 
     /** Equal-weight so the header divides into the same columns as the grid below it. */

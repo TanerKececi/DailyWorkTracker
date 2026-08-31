@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.stateIn
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 /** Shows one habit's history: streaks, completion rate, and a grid of recent days. */
@@ -105,16 +106,22 @@ class HabitDetailViewModel
             val items = mutableListOf<HeatmapItem>()
             var monday = firstMonday
             var previousMonth: YearMonth? = null
+            val firstMonth = YearMonth.from(firstMonday)
 
             while (!monday.isAfter(lastDay)) {
-                // Label the gutter only when the month changes, so it reads as a heading.
-                val month = YearMonth.from(monday)
+                // A week takes the month of its Monday, for both its label and its band. Banding
+                // per day instead would staircase mid-row and disagree with the heading beside it.
+                val weekMonth = YearMonth.from(monday)
+                val isAlternate = ChronoUnit.MONTHS.between(firstMonth, weekMonth) % 2L != 0L
+
                 items +=
                     HeatmapItem.WeekGutter(
                         weekStart = monday,
-                        month = month.takeIf { it != previousMonth },
+                        // Label only when the month changes, so it reads as a heading.
+                        month = weekMonth.takeIf { it != previousMonth },
+                        isAlternateMonth = isAlternate,
                     )
-                previousMonth = month
+                previousMonth = weekMonth
 
                 (0L until DAYS_PER_WEEK).forEach { offset ->
                     val date = monday.plusDays(offset)
@@ -122,6 +129,7 @@ class HabitDetailViewModel
                         HeatmapItem.Day(
                             date = date,
                             status = statusOf(habit, completed, date, createdOn, today),
+                            isAlternateMonth = isAlternate,
                         )
                 }
                 monday = monday.plusWeeks(1)

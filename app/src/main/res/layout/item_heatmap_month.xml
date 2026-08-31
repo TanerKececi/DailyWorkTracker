@@ -4,9 +4,10 @@
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/containerBand"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="3dp">
+    android:paddingVertical="3dp">
 
     <TextView
         android:id="@+id/textMonth"
@@ -14,6 +15,8 @@
         android:layout_height="32dp"
         android:layout_gravity="center_vertical|start"
         android:gravity="center_vertical"
+        android:paddingStart="2dp"
+        android:paddingEnd="4dp"
         android:textAppearance="?attr/textAppearanceLabelSmall"
         android:textColor="?attr/colorOnSurfaceVariant"
         tools:text="Sep" />

@@ -2,8 +2,11 @@ package com.example.dailyworktracker.ui.habitdetail
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.isInvisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -12,13 +15,15 @@ import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.ItemHeatmapCellBinding
 import com.example.dailyworktracker.databinding.ItemHeatmapMonthBinding
 import com.google.android.material.color.MaterialColors
+import java.time.Year
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.Locale
 
 /**
- * Draws the day grid.
+ * Draws the day grid as a column of checkboxes: a day that was kept is filled, a day that was due
+ * and missed is an empty outline, and a day nothing was due gets no box at all.
  *
  * Each row is a month gutter followed by seven days, which is why the grid is laid out in
  * [HabitDetailViewModel.COLUMNS] equal columns: the weekday header lines up with no span arithmetic.
@@ -56,12 +61,13 @@ class HeatmapAdapter : ListAdapter<HeatmapItem, RecyclerView.ViewHolder>(DIFF_CA
         private val binding: ItemHeatmapMonthBinding,
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: HeatmapItem.WeekGutter) {
-            val month = item.month
+            val context = binding.root.context
+            binding.containerBand.setBackgroundColor(bandColor(context, item.isAlternateMonth))
             binding.textMonth.text =
-                month?.let {
-                    val name = it.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                item.month?.let { month ->
+                    val name = month.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
                     // Disambiguate once a grid spans a year boundary.
-                    if (it.year == java.time.Year.now().value) name else "$name ${it.year}"
+                    if (month.year == Year.now().value) name else name + " " + month.year
                 }.orEmpty()
         }
     }
@@ -72,46 +78,62 @@ class HeatmapAdapter : ListAdapter<HeatmapItem, RecyclerView.ViewHolder>(DIFF_CA
         fun bind(item: HeatmapItem.Day) {
             val context = binding.root.context
 
+            binding.containerBand.setBackgroundColor(bandColor(context, item.isAlternateMonth))
+
             // Out-of-range days keep their slot so the weekday columns stay aligned.
             binding.viewCell.isInvisible = item.status == DayStatus.OUT_OF_RANGE
-            binding.viewCell.backgroundTintList =
-                ColorStateList.valueOf(fillColor(context, item.status))
+            applyBox(context, item.status)
+
             binding.textDay.setTextColor(textColor(context, item.status))
             binding.textDay.text = item.date.dayOfMonth.toString()
-
             binding.root.contentDescription = describe(context, item)
         }
 
-        private fun fillColor(
+        /**
+         * Filled for a kept day, outlined for a missed one.
+         *
+         * A day nothing was due on gets no box: drawing an empty one would read as an unticked
+         * checkbox, which is the opposite of what it means.
+         */
+        private fun applyBox(
             context: Context,
             status: DayStatus,
-        ): Int =
+        ) {
+            val box: View = binding.viewCell
             when (status) {
-                DayStatus.COMPLETED -> attrColor(context, androidx.appcompat.R.attr.colorPrimary)
-                DayStatus.MISSED -> attrColor(context, com.google.android.material.R.attr.colorErrorContainer)
-                // Clearly tinted, not another shade of grey: today is still due, not an off-day.
-                DayStatus.PENDING -> attrColor(context, com.google.android.material.R.attr.colorPrimaryContainer)
-                DayStatus.NOT_SCHEDULED, DayStatus.OUT_OF_RANGE ->
-                    attrColor(context, com.google.android.material.R.attr.colorSurfaceVariant)
-            }
+                DayStatus.COMPLETED -> {
+                    box.setBackgroundResource(R.drawable.bg_heatmap_day_filled)
+                    box.backgroundTintList = ColorStateList.valueOf(attrColor(context, PRIMARY))
+                }
 
-        /** Day numbers sit on top of the fill, so each one needs its own contrasting colour. */
+                DayStatus.MISSED, DayStatus.OUT_OF_RANGE -> {
+                    box.setBackgroundResource(R.drawable.bg_heatmap_day_outlined)
+                    box.backgroundTintList = ColorStateList.valueOf(attrColor(context, OUTLINE))
+                }
+
+                // Due today: an empty box, emphasised so it reads as still open rather than missed.
+                DayStatus.PENDING -> {
+                    box.setBackgroundResource(R.drawable.bg_heatmap_day_outlined)
+                    box.backgroundTintList = ColorStateList.valueOf(attrColor(context, PRIMARY))
+                }
+
+                DayStatus.NOT_SCHEDULED -> {
+                    box.background = null
+                    box.backgroundTintList = null
+                }
+            }
+        }
+
+        /** Day numbers sit on top of the box, so each one needs its own contrasting colour. */
         private fun textColor(
             context: Context,
             status: DayStatus,
         ): Int =
             when (status) {
-                DayStatus.COMPLETED -> attrColor(context, com.google.android.material.R.attr.colorOnPrimary)
-                DayStatus.MISSED -> attrColor(context, com.google.android.material.R.attr.colorOnErrorContainer)
-                DayStatus.PENDING -> attrColor(context, com.google.android.material.R.attr.colorOnPrimaryContainer)
-                DayStatus.NOT_SCHEDULED, DayStatus.OUT_OF_RANGE ->
-                    attrColor(context, com.google.android.material.R.attr.colorOnSurfaceVariant)
+                DayStatus.COMPLETED -> attrColor(context, ON_PRIMARY)
+                DayStatus.PENDING -> attrColor(context, PRIMARY)
+                else -> attrColor(context, ON_SURFACE_VARIANT)
             }
-
-        private fun attrColor(
-            context: Context,
-            attr: Int,
-        ): Int = MaterialColors.getColor(context, attr, 0)
 
         private fun describe(
             context: Context,
@@ -124,18 +146,47 @@ class HeatmapAdapter : ListAdapter<HeatmapItem, RecyclerView.ViewHolder>(DIFF_CA
                     DayStatus.MISSED -> context.getString(R.string.habit_detail_legend_missed)
                     else -> ""
                 }
-            return if (state.isEmpty()) date else "$date, $state"
+            return if (state.isEmpty()) date else date + ", " + state
         }
     }
 
-    private companion object {
-        const val VIEW_TYPE_GUTTER = 0
-        const val VIEW_TYPE_DAY = 1
+    companion object {
+        private const val VIEW_TYPE_GUTTER = 0
+        private const val VIEW_TYPE_DAY = 1
 
-        val DATE_FORMAT: DateTimeFormatter =
+        private val PRIMARY = androidx.appcompat.R.attr.colorPrimary
+        private val ON_PRIMARY = com.google.android.material.R.attr.colorOnPrimary
+        private val OUTLINE = com.google.android.material.R.attr.colorOutline
+        private val ON_SURFACE_VARIANT = com.google.android.material.R.attr.colorOnSurfaceVariant
+        private val SURFACE_VARIANT = com.google.android.material.R.attr.colorSurfaceVariant
+
+        /** Faint enough to group months without competing with the boxes drawn on top. */
+        private const val BAND_ALPHA = 90
+
+        private val DATE_FORMAT: DateTimeFormatter =
             DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
 
-        val DIFF_CALLBACK =
+        fun attrColor(
+            context: Context,
+            attr: Int,
+        ): Int = MaterialColors.getColor(context, attr, 0)
+
+        fun bandColor(
+            context: Context,
+            isAlternateMonth: Boolean,
+        ): Int =
+            if (isAlternateMonth) {
+                ColorUtils.setAlphaComponent(attrColor(context, SURFACE_VARIANT), BAND_ALPHA)
+            } else {
+                Color.TRANSPARENT
+            }
+
+        /** Tints for the legend, so the key cannot drift from the grid it explains. */
+        fun completedTint(context: Context): Int = attrColor(context, PRIMARY)
+
+        fun missedTint(context: Context): Int = attrColor(context, OUTLINE)
+
+        private val DIFF_CALLBACK =
             object : DiffUtil.ItemCallback<HeatmapItem>() {
                 override fun areItemsTheSame(
                     oldItem: HeatmapItem,

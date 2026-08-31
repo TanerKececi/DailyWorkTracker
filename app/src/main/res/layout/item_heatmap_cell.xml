@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-  One day in the history grid. A fixed square centred in its column keeps the grid even across
-  screen widths without measuring anything at runtime.
+  One day in the history grid.
+
+  The root carries the month band and fills its whole column so adjacent slots tile without seams;
+  the box inside is a fixed square, keeping the grid even across screen widths.
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/containerBand"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="3dp">
+    android:paddingVertical="3dp">
 
     <FrameLayout
         android:id="@+id/viewCell"
         android:layout_width="32dp"
         android:layout_height="32dp"
-        android:layout_gravity="center"
-        android:background="@drawable/bg_heatmap_cell">
+        android:layout_gravity="center">
 
         <TextView
             android:id="@+id/textDay"

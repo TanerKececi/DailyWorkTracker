@@ -43,6 +43,42 @@ class HabitDetailViewModelTest {
         awaitDetail(habitId).heatmap.filterIsInstance<HeatmapItem.Day>()
 
     @Test
+    fun `a whole row shares one band, and consecutive months alternate`() =
+        runTest {
+            repository.seed(habit(id = 1L))
+
+            val rows = awaitDetail().heatmap.chunked(HabitDetailViewModel.COLUMNS)
+
+            // Banding is per week, so a row never changes shade partway along.
+            rows.forEach { row ->
+                assertEquals(1, row.map { it.isAlternateMonth }.distinct().size)
+            }
+
+            // The shade flips exactly where a new month is announced, and nowhere else.
+            rows.zipWithNext().forEach { (previous, next) ->
+                val startsNewMonth = (next.first() as HeatmapItem.WeekGutter).month != null
+                val changedBand = previous.first().isAlternateMonth != next.first().isAlternateMonth
+                assertEquals(startsNewMonth, changedBand)
+            }
+        }
+
+    @Test
+    fun `a gutter shares the band of the week it labels`() =
+        runTest {
+            repository.seed(habit(id = 1L))
+
+            val heatmap = awaitDetail().heatmap
+            val gutters = heatmap.filterIsInstance<HeatmapItem.WeekGutter>()
+
+            gutters.forEach { gutter ->
+                val mondayCell =
+                    heatmap.filterIsInstance<HeatmapItem.Day>()
+                        .first { it.date == gutter.weekStart }
+                assertEquals(mondayCell.isAlternateMonth, gutter.isAlternateMonth)
+            }
+        }
+
+    @Test
     fun `reports empty when the habit does not exist`() =
         runTest {
             viewModel(habitId = 99L).uiState.test {

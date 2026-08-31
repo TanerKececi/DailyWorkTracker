@@ -16,10 +16,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-
     @Provides
     @Singleton
-    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
+    fun provideAppDatabase(
+        @ApplicationContext context: Context,
+    ): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
             .build()
 
@@ -27,6 +28,5 @@ object DatabaseModule {
     fun provideHabitDao(database: AppDatabase): HabitDao = database.habitDao()
 
     @Provides
-    fun provideHabitCompletionDao(database: AppDatabase): HabitCompletionDao =
-        database.habitCompletionDao()
+    fun provideHabitCompletionDao(database: AppDatabase): HabitCompletionDao = database.habitCompletionDao()
 }

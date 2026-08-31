@@ -12,7 +12,6 @@ import java.time.LocalDate
  * Dates cross this boundary as [LocalDate]; the epoch-day encoding is a storage detail below it.
  */
 interface HabitRepository {
-
     /** Active habits scheduled for today, each flagged with whether it is already done. */
     fun observeTodaysHabits(): Flow<List<HabitWithStatus>>
 
@@ -36,7 +35,10 @@ interface HabitRepository {
     suspend fun unarchiveHabit(habitId: Long)
 
     /** Marks [habitId] done on [date], or clears it if it was already done. */
-    suspend fun toggleCompletion(habitId: Long, date: LocalDate)
+    suspend fun toggleCompletion(
+        habitId: Long,
+        date: LocalDate,
+    )
 
     /** Convenience for the common case, so callers need no clock of their own. */
     suspend fun toggleCompletionToday(habitId: Long)

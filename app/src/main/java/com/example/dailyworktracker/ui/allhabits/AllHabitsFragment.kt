@@ -27,15 +27,18 @@ import kotlinx.coroutines.launch
  */
 @AndroidEntryPoint
 class AllHabitsFragment : Fragment(R.layout.fragment_all_habits) {
-
     private val binding by viewBinding(FragmentAllHabitsBinding::bind)
     private val viewModel: AllHabitsViewModel by viewModels()
 
-    private val habitAdapter = AllHabitsAdapter(
-        onMoreClicked = { item, anchor -> showHabitMenu(item, anchor) },
-    )
+    private val habitAdapter =
+        AllHabitsAdapter(
+            onMoreClicked = { item, anchor -> showHabitMenu(item, anchor) },
+        )
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         applyWindowInsets()
         binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
@@ -50,9 +53,10 @@ class AllHabitsFragment : Fragment(R.layout.fragment_all_habits) {
 
     private fun applyWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            val bottom = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
-            ).bottom
+            val bottom =
+                insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
+                ).bottom
             view.updatePadding(bottom = bottom)
             insets
         }
@@ -66,27 +70,31 @@ class AllHabitsFragment : Fragment(R.layout.fragment_all_habits) {
         }
     }
 
-    private fun render(state: UiState<List<AllHabitItemUiModel>>) = with(binding) {
-        progressLoading.isVisible = state is UiState.Loading
-        recyclerHabits.isVisible = state is UiState.Success
-        groupEmpty.isVisible = state is UiState.Empty
-        groupError.isVisible = state is UiState.Error
+    private fun render(state: UiState<List<AllHabitItemUiModel>>) =
+        with(binding) {
+            progressLoading.isVisible = state is UiState.Loading
+            recyclerHabits.isVisible = state is UiState.Success
+            groupEmpty.isVisible = state is UiState.Empty
+            groupError.isVisible = state is UiState.Error
 
-        when (state) {
-            is UiState.Success -> habitAdapter.submitList(state.data)
+            when (state) {
+                is UiState.Success -> habitAdapter.submitList(state.data)
 
-            is UiState.Empty -> {
-                habitAdapter.submitList(emptyList())
-                textEmptyTitle.setText(state.titleRes)
-                textEmptyMessage.setText(state.messageRes)
+                is UiState.Empty -> {
+                    habitAdapter.submitList(emptyList())
+                    textEmptyTitle.setText(state.titleRes)
+                    textEmptyMessage.setText(state.messageRes)
+                }
+
+                is UiState.Error -> textErrorMessage.text = state.throwable.localizedMessage
+                UiState.Loading -> habitAdapter.submitList(emptyList())
             }
-
-            is UiState.Error -> textErrorMessage.text = state.throwable.localizedMessage
-            UiState.Loading -> habitAdapter.submitList(emptyList())
         }
-    }
 
-    private fun showHabitMenu(item: AllHabitItemUiModel, anchor: View) {
+    private fun showHabitMenu(
+        item: AllHabitItemUiModel,
+        anchor: View,
+    ) {
         PopupMenu(requireContext(), anchor).apply {
             inflate(R.menu.menu_all_habit_item)
             menu.findItem(R.id.action_toggle_archive).setTitle(
@@ -103,11 +111,12 @@ class AllHabitsFragment : Fragment(R.layout.fragment_all_habits) {
 
                     R.id.action_toggle_archive -> {
                         viewModel.onArchiveToggled(item.id, item.isArchived)
-                        val message = if (item.isArchived) {
-                            R.string.habit_restored_message
-                        } else {
-                            R.string.habit_archived_message
-                        }
+                        val message =
+                            if (item.isArchived) {
+                                R.string.habit_restored_message
+                            } else {
+                                R.string.habit_archived_message
+                            }
                         Snackbar.make(
                             binding.root,
                             getString(message, item.title),

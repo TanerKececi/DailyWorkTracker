@@ -15,6 +15,8 @@ interface DateProvider {
 }
 
 @Singleton
-class SystemDateProvider @Inject constructor() : DateProvider {
-    override fun today(): LocalDate = LocalDate.now()
-}
+class SystemDateProvider
+    @Inject
+    constructor() : DateProvider {
+        override fun today(): LocalDate = LocalDate.now()
+    }

@@ -9,7 +9,6 @@ import androidx.annotation.StringRes
  * instead of juggling separate `isLoading` / `error` / `items` fields that can contradict each other.
  */
 sealed interface UiState<out T> {
-
     data object Loading : UiState<Nothing>
 
     data class Success<out T>(val data: T) : UiState<T>

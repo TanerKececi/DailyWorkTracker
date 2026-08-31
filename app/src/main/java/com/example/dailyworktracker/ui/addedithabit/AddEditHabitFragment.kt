@@ -31,7 +31,6 @@ import java.util.Locale
  */
 @AndroidEntryPoint
 class AddEditHabitFragment : BottomSheetDialogFragment() {
-
     private var _binding: BottomsheetAddEditHabitBinding? = null
     private val binding get() = requireNotNull(_binding)
 
@@ -49,7 +48,10 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         setUpDayChips()
         setUpInputs()
@@ -76,19 +78,20 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
         }
     }
 
-    private fun setUpInputs() = with(binding) {
-        editTitle.doAfterTextChanged { text ->
-            if (!isBindingState) viewModel.onTitleChanged(text?.toString().orEmpty())
+    private fun setUpInputs() =
+        with(binding) {
+            editTitle.doAfterTextChanged { text ->
+                if (!isBindingState) viewModel.onTitleChanged(text?.toString().orEmpty())
+            }
+            editEmoji.doAfterTextChanged { text ->
+                if (!isBindingState) viewModel.onEmojiChanged(text?.toString().orEmpty())
+            }
+            switchEveryDay.setOnCheckedChangeListener { _, isChecked ->
+                if (!isBindingState) viewModel.onEveryDayToggled(isChecked)
+            }
+            buttonSave.setOnClickListener { viewModel.onSaveClicked() }
+            buttonCancel.setOnClickListener { dismiss() }
         }
-        editEmoji.doAfterTextChanged { text ->
-            if (!isBindingState) viewModel.onEmojiChanged(text?.toString().orEmpty())
-        }
-        switchEveryDay.setOnCheckedChangeListener { _, isChecked ->
-            if (!isBindingState) viewModel.onEveryDayToggled(isChecked)
-        }
-        buttonSave.setOnClickListener { viewModel.onSaveClicked() }
-        buttonCancel.setOnClickListener { dismiss() }
-    }
 
     private fun observeUiState() {
         viewLifecycleOwner.lifecycleScope.launch {
@@ -98,39 +101,40 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
         }
     }
 
-    private fun render(state: AddEditHabitUiState) = with(binding) {
-        if (state.isSaved) {
-            dismiss()
-            return@with
+    private fun render(state: AddEditHabitUiState) =
+        with(binding) {
+            if (state.isSaved) {
+                dismiss()
+                return@with
+            }
+
+            isBindingState = true
+
+            textSheetTitle.setText(
+                if (state.isEditing) R.string.edit_habit_title else R.string.add_habit_title,
+            )
+
+            // Only write text back when it differs, otherwise the cursor jumps to the start on each keystroke.
+            if (editTitle.text?.toString() != state.title) {
+                editTitle.setText(state.title)
+                editTitle.setSelection(state.title.length)
+            }
+            if (editEmoji.text?.toString() != state.emoji) {
+                editEmoji.setText(state.emoji)
+            }
+
+            chipGroupDays.children.filterIsInstance<Chip>().forEach { chip ->
+                val day = chip.tag as DayOfWeek
+                chip.isChecked = WeekdaySchedule.isScheduledOn(state.scheduleDaysBitmask, day)
+            }
+            switchEveryDay.isChecked = WeekdaySchedule.isEveryDay(state.scheduleDaysBitmask)
+
+            inputLayoutTitle.error = state.titleError?.let(::getString)
+            textScheduleError.isVisible = state.scheduleError != null
+            state.scheduleError?.let(textScheduleError::setText)
+
+            buttonSave.isEnabled = !state.isSaving
+
+            isBindingState = false
         }
-
-        isBindingState = true
-
-        textSheetTitle.setText(
-            if (state.isEditing) R.string.edit_habit_title else R.string.add_habit_title,
-        )
-
-        // Only write text back when it differs, otherwise the cursor jumps to the start on each keystroke.
-        if (editTitle.text?.toString() != state.title) {
-            editTitle.setText(state.title)
-            editTitle.setSelection(state.title.length)
-        }
-        if (editEmoji.text?.toString() != state.emoji) {
-            editEmoji.setText(state.emoji)
-        }
-
-        chipGroupDays.children.filterIsInstance<Chip>().forEach { chip ->
-            val day = chip.tag as DayOfWeek
-            chip.isChecked = WeekdaySchedule.isScheduledOn(state.scheduleDaysBitmask, day)
-        }
-        switchEveryDay.isChecked = WeekdaySchedule.isEveryDay(state.scheduleDaysBitmask)
-
-        inputLayoutTitle.error = state.titleError?.let(::getString)
-        textScheduleError.isVisible = state.scheduleError != null
-        state.scheduleError?.let(textScheduleError::setText)
-
-        buttonSave.isEnabled = !state.isSaving
-
-        isBindingState = false
-    }
 }

@@ -22,48 +22,53 @@ import javax.inject.Inject
  * This screen is the way back to them: it lists every habit, archived ones included.
  */
 @HiltViewModel
-class AllHabitsViewModel @Inject constructor(
-    private val repository: HabitRepository,
-) : ViewModel() {
+class AllHabitsViewModel
+    @Inject
+    constructor(
+        private val repository: HabitRepository,
+    ) : ViewModel() {
+        val uiState: StateFlow<UiState<List<AllHabitItemUiModel>>> =
+            repository.observeAllHabits()
+                .map { habits ->
+                    if (habits.isEmpty()) {
+                        UiState.Empty(
+                            titleRes = R.string.habit_list_empty_title,
+                            messageRes = R.string.habit_list_empty_message,
+                        )
+                    } else {
+                        UiState.Success(habits.map(Habit::toUiModel))
+                    }
+                }
+                .catch { emit(UiState.Error(it)) }
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                    initialValue = UiState.Loading,
+                )
 
-    val uiState: StateFlow<UiState<List<AllHabitItemUiModel>>> =
-        repository.observeAllHabits()
-            .map { habits ->
-                if (habits.isEmpty()) {
-                    UiState.Empty(
-                        titleRes = R.string.habit_list_empty_title,
-                        messageRes = R.string.habit_list_empty_message,
-                    )
+        fun onArchiveToggled(
+            habitId: Long,
+            isCurrentlyArchived: Boolean,
+        ) {
+            viewModelScope.launch {
+                if (isCurrentlyArchived) {
+                    repository.unarchiveHabit(habitId)
                 } else {
-                    UiState.Success(habits.map(Habit::toUiModel))
+                    repository.archiveHabit(habitId)
                 }
             }
-            .catch { emit(UiState.Error(it)) }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-                initialValue = UiState.Loading,
-            )
+        }
 
-    fun onArchiveToggled(habitId: Long, isCurrentlyArchived: Boolean) {
-        viewModelScope.launch {
-            if (isCurrentlyArchived) {
-                repository.unarchiveHabit(habitId)
-            } else {
-                repository.archiveHabit(habitId)
-            }
+        private companion object {
+            const val STOP_TIMEOUT_MILLIS = 5_000L
         }
     }
 
-    private companion object {
-        const val STOP_TIMEOUT_MILLIS = 5_000L
-    }
-}
-
-private fun Habit.toUiModel() = AllHabitItemUiModel(
-    id = id,
-    title = title,
-    emoji = emoji,
-    scheduleDaysBitmask = scheduleDaysBitmask,
-    isArchived = isArchived,
-)
+private fun Habit.toUiModel() =
+    AllHabitItemUiModel(
+        id = id,
+        title = title,
+        emoji = emoji,
+        scheduleDaysBitmask = scheduleDaysBitmask,
+        isArchived = isArchived,
+    )

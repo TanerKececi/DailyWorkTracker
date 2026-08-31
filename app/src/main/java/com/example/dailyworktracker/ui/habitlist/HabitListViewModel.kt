@@ -16,56 +16,60 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HabitListViewModel @Inject constructor(
-    private val repository: HabitRepository,
-) : ViewModel() {
+class HabitListViewModel
+    @Inject
+    constructor(
+        private val repository: HabitRepository,
+    ) : ViewModel() {
+        val uiState: StateFlow<UiState<List<HabitListItemUiModel>>> =
+            combine(
+                repository.observeTodaysHabits(),
+                repository.observeActiveHabitCount(),
+            ) { todaysHabits, activeHabitCount ->
+                when {
+                    todaysHabits.isNotEmpty() ->
+                        UiState.Success(todaysHabits.map(HabitWithStatus::toUiModel))
 
-    val uiState: StateFlow<UiState<List<HabitListItemUiModel>>> =
-        combine(
-            repository.observeTodaysHabits(),
-            repository.observeActiveHabitCount(),
-        ) { todaysHabits, activeHabitCount ->
-            when {
-                todaysHabits.isNotEmpty() ->
-                    UiState.Success(todaysHabits.map(HabitWithStatus::toUiModel))
+                    // Habits exist, none is due today: saying "no habits yet" would be wrong.
+                    activeHabitCount > 0 ->
+                        UiState.Empty(
+                            titleRes = R.string.habit_list_nothing_today_title,
+                            messageRes = R.string.habit_list_nothing_today_message,
+                        )
 
-                // Habits exist, none is due today: saying "no habits yet" would be wrong.
-                activeHabitCount > 0 -> UiState.Empty(
-                    titleRes = R.string.habit_list_nothing_today_title,
-                    messageRes = R.string.habit_list_nothing_today_message,
-                )
-
-                else -> UiState.Empty(
-                    titleRes = R.string.habit_list_empty_title,
-                    messageRes = R.string.habit_list_empty_message,
-                )
+                    else ->
+                        UiState.Empty(
+                            titleRes = R.string.habit_list_empty_title,
+                            messageRes = R.string.habit_list_empty_message,
+                        )
+                }
             }
+                .catch { emit(UiState.Error(it)) }
+                .stateIn(
+                    scope = viewModelScope,
+                    // Keep the DB subscription briefly across config changes instead of re-querying.
+                    started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                    initialValue = UiState.Loading,
+                )
+
+        fun onHabitCheckedChanged(habitId: Long) {
+            viewModelScope.launch { repository.toggleCompletionToday(habitId) }
         }
-            .catch { emit(UiState.Error(it)) }
-            .stateIn(
-                scope = viewModelScope,
-                // Keep the DB subscription briefly across config changes instead of re-querying.
-                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-                initialValue = UiState.Loading,
-            )
 
-    fun onHabitCheckedChanged(habitId: Long) {
-        viewModelScope.launch { repository.toggleCompletionToday(habitId) }
+        fun onHabitArchived(habitId: Long) {
+            viewModelScope.launch { repository.archiveHabit(habitId) }
+        }
+
+        private companion object {
+            const val STOP_TIMEOUT_MILLIS = 5_000L
+        }
     }
 
-    fun onHabitArchived(habitId: Long) {
-        viewModelScope.launch { repository.archiveHabit(habitId) }
-    }
-
-    private companion object {
-        const val STOP_TIMEOUT_MILLIS = 5_000L
-    }
-}
-
-private fun HabitWithStatus.toUiModel() = HabitListItemUiModel(
-    id = habit.id,
-    title = habit.title,
-    emoji = habit.emoji,
-    isCompleted = isCompleted,
-    scheduleDaysBitmask = habit.scheduleDaysBitmask,
-)
+private fun HabitWithStatus.toUiModel() =
+    HabitListItemUiModel(
+        id = habit.id,
+        title = habit.title,
+        emoji = habit.emoji,
+        isCompleted = isCompleted,
+        scheduleDaysBitmask = habit.scheduleDaysBitmask,
+    )

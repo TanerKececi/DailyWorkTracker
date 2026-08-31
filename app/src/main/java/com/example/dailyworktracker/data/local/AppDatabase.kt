@@ -19,7 +19,6 @@ import com.example.dailyworktracker.data.local.entity.HabitCompletion
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
-
     abstract fun habitDao(): HabitDao
 
     abstract fun habitCompletionDao(): HabitCompletionDao

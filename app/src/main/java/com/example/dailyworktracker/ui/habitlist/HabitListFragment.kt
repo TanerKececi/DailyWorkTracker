@@ -25,16 +25,19 @@ import kotlinx.coroutines.launch
 /** Shows the habits scheduled for today and lets the user tick them off. */
 @AndroidEntryPoint
 class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
-
     private val binding by viewBinding(FragmentHabitListBinding::bind)
     private val viewModel: HabitListViewModel by viewModels()
 
-    private val habitAdapter = HabitListAdapter(
-        onToggleCompleted = { habitId -> viewModel.onHabitCheckedChanged(habitId) },
-        onMoreClicked = { item, anchor -> showHabitMenu(item, anchor) },
-    )
+    private val habitAdapter =
+        HabitListAdapter(
+            onToggleCompleted = { habitId -> viewModel.onHabitCheckedChanged(habitId) },
+            onMoreClicked = { item, anchor -> showHabitMenu(item, anchor) },
+        )
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         applyWindowInsets()
         setUpToolbarMenu()
@@ -43,21 +46,22 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         observeUiState()
     }
 
-    private fun setUpToolbarMenu() = with(binding.toolbar) {
-        inflateMenu(R.menu.menu_habit_list)
-        setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.action_all_habits -> {
-                    findNavController().navigate(
-                        HabitListFragmentDirections.actionHabitListToAllHabits(),
-                    )
-                    true
-                }
+    private fun setUpToolbarMenu() =
+        with(binding.toolbar) {
+            inflateMenu(R.menu.menu_habit_list)
+            setOnMenuItemClickListener { menuItem ->
+                when (menuItem.itemId) {
+                    R.id.action_all_habits -> {
+                        findNavController().navigate(
+                            HabitListFragmentDirections.actionHabitListToAllHabits(),
+                        )
+                        true
+                    }
 
-                else -> false
+                    else -> false
+                }
             }
         }
-    }
 
     private fun navigateToHabitEditor(habitId: Long) {
         findNavController().navigate(
@@ -71,9 +75,10 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
      */
     private fun applyWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            val bottom = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
-            ).bottom
+            val bottom =
+                insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
+                ).bottom
             view.updatePadding(bottom = bottom)
             insets
         }
@@ -93,27 +98,31 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         }
     }
 
-    private fun render(state: UiState<List<HabitListItemUiModel>>) = with(binding) {
-        progressLoading.isVisible = state is UiState.Loading
-        recyclerHabits.isVisible = state is UiState.Success
-        groupEmpty.isVisible = state is UiState.Empty
-        groupError.isVisible = state is UiState.Error
+    private fun render(state: UiState<List<HabitListItemUiModel>>) =
+        with(binding) {
+            progressLoading.isVisible = state is UiState.Loading
+            recyclerHabits.isVisible = state is UiState.Success
+            groupEmpty.isVisible = state is UiState.Empty
+            groupError.isVisible = state is UiState.Error
 
-        when (state) {
-            is UiState.Success -> habitAdapter.submitList(state.data)
+            when (state) {
+                is UiState.Success -> habitAdapter.submitList(state.data)
 
-            is UiState.Empty -> {
-                habitAdapter.submitList(emptyList())
-                textEmptyTitle.setText(state.titleRes)
-                textEmptyMessage.setText(state.messageRes)
+                is UiState.Empty -> {
+                    habitAdapter.submitList(emptyList())
+                    textEmptyTitle.setText(state.titleRes)
+                    textEmptyMessage.setText(state.messageRes)
+                }
+
+                is UiState.Error -> textErrorMessage.text = state.throwable.localizedMessage
+                UiState.Loading -> habitAdapter.submitList(emptyList())
             }
-
-            is UiState.Error -> textErrorMessage.text = state.throwable.localizedMessage
-            UiState.Loading -> habitAdapter.submitList(emptyList())
         }
-    }
 
-    private fun showHabitMenu(item: HabitListItemUiModel, anchor: View) {
+    private fun showHabitMenu(
+        item: HabitListItemUiModel,
+        anchor: View,
+    ) {
         PopupMenu(requireContext(), anchor).apply {
             inflate(R.menu.menu_habit_item)
             setOnMenuItemClickListener { menuItem ->

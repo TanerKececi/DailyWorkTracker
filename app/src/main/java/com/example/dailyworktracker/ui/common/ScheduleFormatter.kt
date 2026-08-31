@@ -13,12 +13,16 @@ import java.util.Locale
  * so they are localized by the platform rather than hand-maintained in strings.xml.
  */
 object ScheduleFormatter {
-
-    fun format(context: Context, bitmask: Int): String = when {
-        !WeekdaySchedule.hasAnyDay(bitmask) -> context.getString(R.string.schedule_no_days)
-        WeekdaySchedule.isEveryDay(bitmask) -> context.getString(R.string.schedule_every_day)
-        else -> WeekdaySchedule.toDays(bitmask).joinToString(separator = ", ") { day ->
-            day.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+    fun format(
+        context: Context,
+        bitmask: Int,
+    ): String =
+        when {
+            !WeekdaySchedule.hasAnyDay(bitmask) -> context.getString(R.string.schedule_no_days)
+            WeekdaySchedule.isEveryDay(bitmask) -> context.getString(R.string.schedule_every_day)
+            else ->
+                WeekdaySchedule.toDays(bitmask).joinToString(separator = ", ") { day ->
+                    day.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                }
         }
-    }
 }

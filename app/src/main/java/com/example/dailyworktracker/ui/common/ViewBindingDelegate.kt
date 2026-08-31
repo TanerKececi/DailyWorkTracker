@@ -26,7 +26,6 @@ class ViewBindingDelegate<T : ViewBinding>(
     fragment: Fragment,
     private val bind: (View) -> T,
 ) : ReadOnlyProperty<Fragment, T> {
-
     private var binding: T? = null
     private var boundView: View? = null
 
@@ -43,7 +42,10 @@ class ViewBindingDelegate<T : ViewBinding>(
         }
     }
 
-    override fun getValue(thisRef: Fragment, property: KProperty<*>): T {
+    override fun getValue(
+        thisRef: Fragment,
+        property: KProperty<*>,
+    ): T {
         val view = thisRef.requireView()
         binding?.let { cached -> if (boundView === view) return cached }
         return bind(view).also {
@@ -53,5 +55,4 @@ class ViewBindingDelegate<T : ViewBinding>(
     }
 }
 
-fun <T : ViewBinding> Fragment.viewBinding(bind: (View) -> T): ViewBindingDelegate<T> =
-    ViewBindingDelegate(this, bind)
+fun <T : ViewBinding> Fragment.viewBinding(bind: (View) -> T): ViewBindingDelegate<T> = ViewBindingDelegate(this, bind)

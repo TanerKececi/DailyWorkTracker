@@ -10,9 +10,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface HabitCompletionDao {
-
     @Query("SELECT * FROM habit_completions WHERE habitId = :habitId AND date = :date LIMIT 1")
-    suspend fun getCompletion(habitId: Long, date: Long): HabitCompletion?
+    suspend fun getCompletion(
+        habitId: Long,
+        date: Long,
+    ): HabitCompletion?
 
     /** IGNORE keeps the unique (habitId, date) index authoritative if a double-tap races. */
     @Insert(onConflict = OnConflictStrategy.IGNORE)

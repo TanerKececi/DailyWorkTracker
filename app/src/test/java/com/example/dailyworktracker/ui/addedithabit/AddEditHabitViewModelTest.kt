@@ -119,7 +119,7 @@ class AddEditHabitViewModelTest {
             viewModel.onSaveClicked()
             advanceUntilIdle()
 
-            assertEquals(AddEditHabitUiState.DEFAULT_EMOJI, repository.getHabit(1L)?.emoji)
+            assertEquals(AddEditHabitScreenState.DEFAULT_EMOJI, repository.getHabit(1L)?.emoji)
         }
 
     @Test
@@ -195,7 +195,7 @@ class AddEditHabitViewModelTest {
         val state = viewModel().uiState.value
 
         assertFalse(state.isReminderEnabled)
-        assertEquals(AddEditHabitUiState.DEFAULT_REMINDER_TIME, state.reminderTime)
+        assertEquals(AddEditHabitScreenState.DEFAULT_REMINDER_TIME, state.reminderTime)
     }
 
     @Test

@@ -36,12 +36,12 @@ class AddEditHabitViewModel
 
         private val _uiState =
             MutableStateFlow(
-                AddEditHabitUiState(
+                AddEditHabitScreenState(
                     isEditing = habitId != NEW_HABIT_ID,
                     scheduleDaysBitmask = WeekdaySchedule.EVERY_DAY,
                 ),
             )
-        val uiState: StateFlow<AddEditHabitUiState> = _uiState.asStateFlow()
+        val uiState: StateFlow<AddEditHabitScreenState> = _uiState.asStateFlow()
 
         /** Set when editing, so saving updates the original row instead of creating a duplicate. */
         private var editedHabit: Habit? = null
@@ -69,7 +69,9 @@ class AddEditHabitViewModel
         }
 
         fun onTitleChanged(title: String) {
-            _uiState.update { it.copy(title = title, titleError = null) }
+            _uiState.update {
+                it.copy(title = title, displayState = it.editingWithoutTitleError())
+            }
         }
 
         fun onEmojiChanged(emoji: String) {
@@ -88,7 +90,7 @@ class AddEditHabitViewModel
                             day,
                             isScheduled,
                         ),
-                    scheduleError = null,
+                    displayState = it.editingWithoutScheduleError(),
                 )
             }
         }
@@ -98,7 +100,7 @@ class AddEditHabitViewModel
                 it.copy(
                     scheduleDaysBitmask =
                         if (isEveryDay) WeekdaySchedule.EVERY_DAY else WeekdaySchedule.NONE,
-                    scheduleError = null,
+                    displayState = it.editingWithoutScheduleError(),
                 )
             }
         }
@@ -121,14 +123,22 @@ class AddEditHabitViewModel
                     .takeIf { !WeekdaySchedule.hasAnyDay(state.scheduleDaysBitmask) }
 
             if (titleError != null || scheduleError != null) {
-                _uiState.update { it.copy(titleError = titleError, scheduleError = scheduleError) }
+                _uiState.update {
+                    it.copy(
+                        displayState =
+                            AddEditHabitDisplayState.Editing(
+                                titleError = titleError,
+                                scheduleError = scheduleError,
+                            ),
+                    )
+                }
                 return
             }
 
-            val emoji = state.emoji.trim().ifEmpty { AddEditHabitUiState.DEFAULT_EMOJI }
+            val emoji = state.emoji.trim().ifEmpty { AddEditHabitScreenState.DEFAULT_EMOJI }
 
             viewModelScope.launch {
-                _uiState.update { it.copy(isSaving = true) }
+                _uiState.update { it.copy(displayState = AddEditHabitDisplayState.Saving) }
                 val existing = editedHabit
                 if (existing != null) {
                     repository.updateHabit(
@@ -148,9 +158,21 @@ class AddEditHabitViewModel
                         ).withReminderTime(state.reminderTime.takeIf { state.isReminderEnabled }),
                     )
                 }
-                _uiState.update { it.copy(isSaving = false, isSaved = true) }
+                _uiState.update { it.copy(displayState = AddEditHabitDisplayState.Saved) }
             }
         }
+
+        /**
+         * Clears one field's validation error while keeping the other's.
+         *
+         * Editing any field also returns the sheet to [AddEditHabitDisplayState.Editing], which is
+         * the only state the errors belong to.
+         */
+        private fun AddEditHabitScreenState.editingWithoutTitleError() =
+            AddEditHabitDisplayState.Editing(titleError = null, scheduleError = scheduleError)
+
+        private fun AddEditHabitScreenState.editingWithoutScheduleError() =
+            AddEditHabitDisplayState.Editing(titleError = titleError, scheduleError = null)
 
         companion object {
             const val ARG_HABIT_ID = "habitId"

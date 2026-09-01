@@ -8,6 +8,7 @@ import androidx.databinding.BindingAdapter
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.dailyworktracker.R
+import com.google.android.material.textfield.TextInputLayout
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -128,4 +129,25 @@ fun TextView.setWeeksShown(weeks: Int) {
 @BindingAdapter("totalCompletions")
 fun TextView.setTotalCompletions(count: Int) {
     text = resources.getQuantityString(R.plurals.habit_detail_total_completions, count, count)
+}
+
+/** Shows a validation message on a text field, or clears it when the resource is absent. */
+@BindingAdapter("errorTextRes")
+fun TextInputLayout.setErrorTextRes(
+    @StringRes resId: Int?,
+) {
+    error = resId?.let(context::getString)
+}
+
+/**
+ * Labels the reminder button with the time, and describes it for screen readers.
+ *
+ * Both come from one adapter because the description embeds the same formatted time; setting them
+ * apart would let them drift.
+ */
+@BindingAdapter("reminderTimeText")
+fun TextView.setReminderTimeText(time: LocalTime) {
+    val formatted = TimeFormatter.format(context, time)
+    text = formatted
+    contentDescription = context.getString(R.string.add_habit_reminder_time_description, formatted)
 }

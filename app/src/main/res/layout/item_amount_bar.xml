@@ -7,9 +7,8 @@
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="0dp"
+    android:layout_width="@dimen/amount_bar_width"
     android:layout_height="wrap_content"
-    android:layout_weight="1"
     android:gravity="center_horizontal"
     android:orientation="vertical">
 

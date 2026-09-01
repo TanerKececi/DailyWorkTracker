@@ -177,8 +177,8 @@ class HabitDetailViewModel
             const val ARG_HABIT_ID = "habitId"
             const val WEEKS_SHOWN = 12
 
-            /** A week of bars: enough to see a pattern, few enough to read without scrolling. */
-            const val CHART_DAYS = 7
+            /** A month of bars. The chart scrolls, so the limit is how far back is interesting. */
+            const val CHART_DAYS = 30
             const val DAYS_PER_WEEK = 7
 
             /** A month gutter plus its seven days; the grid is laid out in this many columns. */

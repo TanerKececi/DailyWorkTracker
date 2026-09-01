@@ -2,4 +2,6 @@
 <resources>
     <!-- Height the tallest bar of the amount chart fills; shorter bars scale against it. -->
     <dimen name="amount_chart_height">96dp</dimen>
+    <!-- One column of the amount chart. Fixed, because the chart scrolls rather than fits. -->
+    <dimen name="amount_bar_width">44dp</dimen>
 </resources>

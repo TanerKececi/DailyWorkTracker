@@ -1,8 +1,10 @@
 package com.example.dailyworktracker.ui.common
 
 import android.content.res.ColorStateList
+import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.PluralsRes
@@ -205,7 +207,12 @@ fun LinearLayout.setAmountBars(bars: List<DailyAmount>?) {
     val inflater = LayoutInflater.from(context)
     val maxAmount = days.maxOf { it.amount }
     val fullHeight = resources.getDimensionPixelSize(R.dimen.amount_chart_height)
-    val dateFormat = DateTimeFormatter.ofPattern(BAR_DATE_PATTERN, Locale.getDefault())
+    val locale = Locale.getDefault()
+    val dateFormat =
+        DateTimeFormatter.ofPattern(
+            DateFormat.getBestDateTimePattern(locale, BAR_DATE_SKELETON),
+            locale,
+        )
     // The bar drawable is shared with the heatmap, which tints it at bind time rather than
     // carrying a colour of its own. Untinted it draws as an all but invisible outline.
     val barTint =
@@ -227,10 +234,22 @@ fun LinearLayout.setAmountBars(bars: List<DailyAmount>?) {
         bar.textBarDate.text = dateFormat.format(day.date)
         addView(bar.root)
     }
+
+    // Opens on the most recent days rather than a month ago. Posted because the columns have not
+    // been measured yet, so there is nothing to scroll to until after this layout pass.
+    (parent as? HorizontalScrollView)?.let { scroller ->
+        scroller.post { scroller.fullScroll(View.FOCUS_RIGHT) }
+    }
 }
 
-/** Day and month only: the chart never spans a year, and the columns are narrow. */
-private const val BAR_DATE_PATTERN = "d.M."
+/**
+ * Month and day, ordered the way the device orders them - "8/26" in the US, "26.08." in Germany.
+ *
+ * A skeleton rather than a literal pattern, matching TimeFormatter: the fields wanted are month and
+ * day, and which order they go in is the locale's business. The year is left out because the chart
+ * never spans one and the columns are narrow.
+ */
+private const val BAR_DATE_SKELETON = "Md"
 
 /**
  * The running total under the grid.

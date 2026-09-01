@@ -94,7 +94,7 @@ class HabitDetailViewModelTest {
 
             assertEquals(HabitDetailViewModel.CHART_DAYS, bars.size)
             // Oldest first, ending today, so the bars read left to right.
-            assertEquals(monday.minusDays(6), bars.first().date)
+            assertEquals(monday.minusDays(HabitDetailViewModel.CHART_DAYS - 1L), bars.first().date)
             assertEquals(monday, bars.last().date)
             // A day with no record is a zero bar rather than a missing column.
             assertEquals(12, bars.last().amount)

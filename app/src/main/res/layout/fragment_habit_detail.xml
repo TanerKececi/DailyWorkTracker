@@ -189,15 +189,27 @@
                     android:textAppearance="?attr/textAppearanceTitleSmall"
                     app:visibleIf="@{state.habit.amountTracked}" />
 
-                <LinearLayout
-                    android:id="@+id/chartAmounts"
+                <!--
+                  Scrolls rather than fits: a month of columns cannot be squeezed into one screen
+                  and still be readable, and the recent end is the interesting one.
+                -->
+                <HorizontalScrollView
+                    android:id="@+id/scrollChart"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:baselineAligned="false"
-                    android:orientation="horizontal"
-                    app:amountBars="@{state.habit.recentAmounts}"
-                    app:visibleIf="@{state.habit.amountTracked}" />
+                    android:scrollbars="none"
+                    app:visibleIf="@{state.habit.amountTracked}">
+
+                    <LinearLayout
+                        android:id="@+id/chartAmounts"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal"
+                        app:amountBars="@{state.habit.recentAmounts}" />
+
+                </HorizontalScrollView>
 
             </LinearLayout>
 

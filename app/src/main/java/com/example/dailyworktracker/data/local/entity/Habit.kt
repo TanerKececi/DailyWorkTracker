@@ -30,6 +30,15 @@ data class Habit(
     val reminderMinute: Int? = null,
     /** Creation timestamp in epoch millis; also the default list ordering. */
     val createdAt: Long,
+    /**
+     * The unit this habit is logged in - "TIMES", "PAGES", "MINUTES" - or null for a plain
+     * tick-it-off habit.
+     *
+     * Nullable rather than an enum column with a default, because null *is* the meaning: a habit
+     * with no unit is the checkbox kind. See `HabitGoal`, which is the shape the rest of the app
+     * works with; the column is only how that shape is stored.
+     */
+    val goalUnit: String? = null,
     /** Soft delete: archived habits disappear from the UI but keep their completion history. */
     @ColumnInfo(defaultValue = "0")
     val isArchived: Boolean = false,

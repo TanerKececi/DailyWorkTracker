@@ -1,22 +1,21 @@
 package com.example.dailyworktracker.ui.habitlist
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.ItemHabitBinding
-import com.example.dailyworktracker.ui.common.ScheduleFormatter
 
 /**
- * Renders the habit rows. Row interactions are surfaced as callbacks rather than handled here, so
- * the adapter stays free of navigation and repository concerns.
+ * Rows are drawn by `item_habit.xml` from the bound item. What is left here is the interaction
+ * that the layout cannot express: callbacks the adapter does not own, and a popup that needs the
+ * clicked view as its anchor.
  */
 class HabitListAdapter(
     private val onToggleCompleted: (habitId: Long) -> Unit,
-    private val onMoreClicked: (item: HabitListItemUiModel, anchor: android.view.View) -> Unit,
+    private val onMoreClicked: (item: HabitListItemUiModel, anchor: View) -> Unit,
 ) : ListAdapter<HabitListItemUiModel, HabitListAdapter.HabitViewHolder>(DIFF_CALLBACK) {
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -38,36 +37,19 @@ class HabitListAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: HabitListItemUiModel) =
             with(binding) {
-                val context = root.context
-                textEmoji.text = item.emoji
-                textTitle.text = item.title
-                textSchedule.text = ScheduleFormatter.format(context, item.scheduleDaysBitmask)
+                this.item = item
 
-                // A zero streak is not worth a badge; it would only add noise to a fresh habit.
-                textStreak.isVisible = item.currentStreak > 0
-                if (item.currentStreak > 0) {
-                    textStreak.text =
-                        context.resources.getQuantityString(
-                            R.plurals.habit_streak,
-                            item.currentStreak,
-                            item.currentStreak,
-                        )
-                }
-
-                // Detach the listener before setting state, otherwise recycling a view fires a spurious
-                // toggle for whichever habit previously occupied this holder.
-                checkboxCompleted.setOnCheckedChangeListener(null)
-                checkboxCompleted.isChecked = item.isCompleted
-                checkboxCompleted.contentDescription =
-                    context.getString(R.string.habit_completed_checkbox, item.title)
-                checkboxCompleted.setOnCheckedChangeListener { _, _ -> onToggleCompleted(item.id) }
-
-                buttonMore.contentDescription =
-                    context.getString(R.string.habit_list_more_options, item.title)
+                // A click listener, not an OnCheckedChangeListener: the checked state is bound from
+                // the item, and a change listener would fire on rebind and toggle whichever habit
+                // previously occupied this recycled holder.
+                checkboxCompleted.setOnClickListener { onToggleCompleted(item.id) }
+                // Tapping anywhere on the row is the primary action: check it off.
+                root.setOnClickListener { onToggleCompleted(item.id) }
                 buttonMore.setOnClickListener { onMoreClicked(item, it) }
 
-                // Tapping anywhere on the row is the primary action: check it off.
-                root.setOnClickListener { checkboxCompleted.isChecked = !checkboxCompleted.isChecked }
+                // Data binding defers to the next frame by default, which shows the recycled row's
+                // old contents for a frame while scrolling. Binding now keeps rows from flickering.
+                executePendingBindings()
             }
     }
 

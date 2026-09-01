@@ -10,6 +10,7 @@ import com.example.dailyworktracker.ui.habitdetail.HabitDetailDisplayState.Conte
 import com.example.dailyworktracker.util.WeekdaySchedule
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -41,6 +42,30 @@ class HabitDetailViewModelTest {
 
     private suspend fun awaitDays(habitId: Long = 1L): List<HeatmapItem.Day> =
         awaitDetail(habitId).heatmap.filterIsInstance<HeatmapItem.Day>()
+
+    @Test
+    fun `a logged amount rides along with the day it belongs to`() =
+        runTest {
+            repository.seed(habit(id = 1L))
+            repository.setAmount(habitId = 1L, date = monday.minusDays(1), amount = 12)
+
+            val byDate = awaitDays().associateBy { it.date }
+
+            assertEquals(12, byDate.getValue(monday.minusDays(1)).amount)
+            // Nothing logged means the cell falls back to showing the date.
+            assertNull(byDate.getValue(monday.minusDays(2)).amount)
+        }
+
+    @Test
+    fun `a ticked-off habit carries no amounts`() =
+        runTest {
+            repository.seed(habit(id = 1L))
+            repository.toggleCompletion(habitId = 1L, date = monday.minusDays(1))
+
+            val byDate = awaitDays().associateBy { it.date }
+
+            assertNull(byDate.getValue(monday.minusDays(1)).amount)
+        }
 
     @Test
     fun `a whole row shares one band, and consecutive months alternate`() =

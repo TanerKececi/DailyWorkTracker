@@ -85,7 +85,9 @@ class HeatmapAdapter : ListAdapter<HeatmapItem, RecyclerView.ViewHolder>(DIFF_CA
             applyBox(context, item.status)
 
             binding.textDay.setTextColor(textColor(context, item.status))
-            binding.textDay.text = item.date.dayOfMonth.toString()
+            // An amount says more than the date, and the column plus the month gutter still place
+            // the day. Cells with nothing logged keep showing the date.
+            binding.textDay.text = (item.amount ?: item.date.dayOfMonth).toString()
             binding.root.contentDescription = describe(context, item)
         }
 

@@ -42,7 +42,7 @@ class HabitDetailViewModel
                 if (habit == null) {
                     HabitDetailDisplayState.Missing
                 } else {
-                    HabitDetailDisplayState.Content(buildState(habit, completions.keys))
+                    HabitDetailDisplayState.Content(buildState(habit, completions))
                 }
             }
                 .catch { emit(HabitDetailDisplayState.Error(it)) }
@@ -54,8 +54,10 @@ class HabitDetailViewModel
 
         private fun buildState(
             habit: Habit,
-            completed: Set<LocalDate>,
+            completions: Map<LocalDate, Int?>,
         ): HabitDetailUiState {
+            // Streaks and statistics only ever ask which days have a record, never how much.
+            val completed = completions.keys
             val today = dateProvider.today()
             val createdOn = HabitVisibility.createdDate(habit)
 
@@ -75,7 +77,7 @@ class HabitDetailViewModel
                         to = today,
                     ),
                 completedCount = completed.size,
-                heatmap = buildHeatmap(habit, completed, createdOn, today),
+                heatmap = buildHeatmap(habit, completions, createdOn, today),
             )
         }
 
@@ -90,10 +92,11 @@ class HabitDetailViewModel
          */
         private fun buildHeatmap(
             habit: Habit,
-            completed: Set<LocalDate>,
+            completions: Map<LocalDate, Int?>,
             createdOn: LocalDate,
             today: LocalDate,
         ): List<HeatmapItem> {
+            val completed = completions.keys
             val lastDay = today.with(DayOfWeek.SUNDAY)
             val earliestShown = lastDay.minusWeeks(WEEKS_SHOWN - 1L).with(DayOfWeek.MONDAY)
             val firstMonday = maxOf(earliestShown, createdOn.with(DayOfWeek.MONDAY))
@@ -125,6 +128,7 @@ class HabitDetailViewModel
                             date = date,
                             status = statusOf(habit, completed, date, createdOn, today),
                             isAlternateMonth = isAlternate,
+                            amount = completions[date],
                         )
                 }
                 monday = monday.plusWeeks(1)

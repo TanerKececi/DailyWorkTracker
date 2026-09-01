@@ -6,7 +6,9 @@ import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.local.entity.HabitCompletion
 import com.example.dailyworktracker.data.model.HabitGoal
 import com.example.dailyworktracker.data.model.HabitUnit
+import com.example.dailyworktracker.data.model.TimeOfDay
 import com.example.dailyworktracker.data.model.withGoal
+import com.example.dailyworktracker.data.model.withTimeOfDay
 import com.example.dailyworktracker.reminder.HabitReminderScheduler
 import com.example.dailyworktracker.util.DateProvider
 import com.example.dailyworktracker.util.WeekdaySchedule
@@ -53,6 +55,7 @@ class SampleDataSeeder
                         createdAt = startedOn.toEpochMilli(),
                         isArchived = sample.isArchived,
                     ).withGoal(sample.goal)
+                        .withTimeOfDay(sample.timeOfDay)
                         .withReminderTime(sample.reminderTime)
                 val habitId = habitDao.insert(habit)
                 // Inserted straight through the DAO, so the reminder has to be scheduled here
@@ -97,6 +100,8 @@ class SampleDataSeeder
             val unit: HabitUnit? = null,
             /** What a logged day draws from, so each habit's chart has its own plausible spread. */
             val amountRange: IntRange = 1..1,
+            /** Null leaves the habit tied to no particular time, which is the default. */
+            val timeOfDay: TimeOfDay? = null,
         ) {
             val goal: HabitGoal get() = unit?.let(HabitGoal::Amount) ?: HabitGoal.Once
         }
@@ -125,7 +130,15 @@ class SampleDataSeeder
             val SAMPLES =
                 listOf(
                     // Near perfect: shows a long streak and a dense grid.
-                    Sample("Brush teeth", "🪥", WeekdaySchedule.EVERY_DAY, 14, 0.97f, LocalTime.of(7, 30)),
+                    Sample(
+                        "Brush teeth",
+                        "🪥",
+                        WeekdaySchedule.EVERY_DAY,
+                        14,
+                        0.97f,
+                        LocalTime.of(7, 30),
+                        timeOfDay = TimeOfDay.MORNING,
+                    ),
                     // Partial schedule, logged in minutes: an off-day gap in both grid and chart.
                     Sample(
                         "Do sport",
@@ -136,12 +149,22 @@ class SampleDataSeeder
                         LocalTime.of(18, 0),
                         unit = HabitUnit.MINUTES,
                         amountRange = 20..60,
+                        timeOfDay = TimeOfDay.AFTERNOON,
                     ),
                     // Patchy: the interesting case for streaks and completion rate.
                     Sample("Wash dishes", "🍽", WeekdaySchedule.EVERY_DAY, 10, 0.55f),
                     Sample("Clean the house", "🧹", WEEKEND, 12, 0.7f),
                     // Logged in pages: a wide spread, so the chart's bars differ noticeably.
-                    Sample("Read", "📚", WEEKDAYS, 9, 0.88f, unit = HabitUnit.PAGES, amountRange = 5..40),
+                    Sample(
+                        "Read",
+                        "📚",
+                        WEEKDAYS,
+                        9,
+                        0.88f,
+                        unit = HabitUnit.PAGES,
+                        amountRange = 5..40,
+                        timeOfDay = TimeOfDay.EVENING,
+                    ),
                     // Started recently: the grid should show one short block, not months of blanks.
                     // Also the small-numbers case, where every bar is a handful.
                     Sample(

@@ -7,6 +7,8 @@
 
         <import type="com.example.dailyworktracker.data.model.HabitUnit" />
 
+        <import type="com.example.dailyworktracker.data.model.TimeOfDay" />
+
         <variable
             name="state"
             type="com.example.dailyworktracker.ui.addedithabit.AddEditHabitScreenState" />
@@ -108,6 +110,64 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 app:singleLine="false" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="@string/add_habit_time_of_day_label"
+                android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+            <!-- Any time is a chip rather than an absent selection, so the choice is always visible. -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupTimeOfDay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipAnyTime"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:checked="@{state.timeOfDay == null}"
+                    android:onClick="@{() -> viewModel.onAnyTimeSelected()}"
+                    android:text="@string/time_of_day_any" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipMorning"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:checked="@{state.timeOfDay == TimeOfDay.MORNING}"
+                    android:onClick="@{() -> viewModel.onTimeOfDaySelected(TimeOfDay.MORNING)}"
+                    android:text="@string/time_of_day_morning" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipAfternoon"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:checked="@{state.timeOfDay == TimeOfDay.AFTERNOON}"
+                    android:onClick="@{() -> viewModel.onTimeOfDaySelected(TimeOfDay.AFTERNOON)}"
+                    android:text="@string/time_of_day_afternoon" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipEvening"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:checked="@{state.timeOfDay == TimeOfDay.EVENING}"
+                    android:onClick="@{() -> viewModel.onTimeOfDaySelected(TimeOfDay.EVENING)}"
+                    android:text="@string/time_of_day_evening" />
+
+            </com.google.android.material.chip.ChipGroup>
 
             <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/switchEveryDay"

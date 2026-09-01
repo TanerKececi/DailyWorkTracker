@@ -3,7 +3,9 @@ package com.example.dailyworktracker.ui.habitlist
 import app.cash.turbine.test
 import com.example.dailyworktracker.data.model.HabitGoal
 import com.example.dailyworktracker.data.model.HabitUnit
+import com.example.dailyworktracker.data.model.TimeOfDay
 import com.example.dailyworktracker.data.model.withGoal
+import com.example.dailyworktracker.data.model.withTimeOfDay
 import com.example.dailyworktracker.fake.FakeDateProvider
 import com.example.dailyworktracker.fake.FakeHabitRepository
 import com.example.dailyworktracker.fake.habit
@@ -382,6 +384,55 @@ class HabitListViewModelTest {
                 val row = (awaitItem().displayState as Content).habits.single()
                 assertFalse(row.isCompleted)
                 assertNull(row.amount)
+            }
+        }
+
+    @Test
+    fun `filtering to a part of the day narrows the list`() =
+        runTest {
+            repository.seed(
+                oldHabit(id = 1L, title = "Brush teeth").withTimeOfDay(TimeOfDay.MORNING),
+                oldHabit(id = 2L, title = "Read").withTimeOfDay(TimeOfDay.EVENING),
+            )
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                assertEquals(HabitListDisplayState.Loading, awaitItem().displayState)
+                // All day shows both.
+                assertEquals(2, (awaitItem().displayState as Content).habits.size)
+
+                viewModel.onTimeFilterSelected(TimeOfDay.MORNING)
+
+                val morning = awaitItem()
+                assertEquals(TimeOfDay.MORNING, morning.timeFilter)
+                assertEquals(
+                    listOf("Brush teeth"),
+                    (morning.displayState as Content).habits.map { it.title },
+                )
+            }
+        }
+
+    /**
+     * A habit tied to no particular time appears only under "all day".
+     *
+     * Letting those through every filter would put most of the list behind every chip, which is
+     * the same as having no filter at all.
+     */
+    @Test
+    fun `a habit with no part of the day is hidden by a filter`() =
+        runTest {
+            repository.seed(oldHabit(id = 1L, title = "Brush teeth"))
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                assertEquals(HabitListDisplayState.Loading, awaitItem().displayState)
+                assertTrue(awaitItem().displayState is Content)
+
+                viewModel.onTimeFilterSelected(TimeOfDay.MORNING)
+
+                // Due today, just not in this part of the day - which is its own empty, not
+                // "nothing scheduled" and certainly not "no habits yet".
+                assertEquals(HabitListDisplayState.NothingAtThisTime, awaitItem().displayState)
             }
         }
 

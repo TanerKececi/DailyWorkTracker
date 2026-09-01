@@ -63,7 +63,7 @@ class MigrationTest {
 
             // Throws if the migration does not produce exactly the schema Room expects for v2.
             helper.runMigrationsAndValidate(TEST_DB, 2, true, AppDatabase.MIGRATION_1_2)
-
+            // Room opens at the current version, so the remaining steps have to run too.
             val database = migratedDatabase()
             val habit = database.habitDao().getById(1L)
             assertEquals("Brush teeth", habit?.title)
@@ -78,13 +78,56 @@ class MigrationTest {
             assertEquals(listOf(date.toEpochDay()), completedDates.map { it.date })
         }
 
+    /**
+     * The path a long-installed user actually takes.
+     *
+     * Testing each step alone would miss a migration that only breaks when run after another, and
+     * whoever has never updated goes from 1 straight through to the current version in one open.
+     */
+    @Test
+    fun migrate1To3_chainsEveryStep() =
+        runTest {
+            helper.createDatabase(TEST_DB, 1).use { db ->
+                db.execSQL(
+                    """
+                    INSERT INTO habits (id, title, emoji, colorHex, scheduleDaysBitmask,
+                                        reminderHour, reminderMinute, createdAt, isArchived)
+                    VALUES (1, 'Brush teeth', 'X', NULL, 127, NULL, NULL, 0, 0)
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    INSERT INTO habit_completions (id, habitId, date, completedAt)
+                    VALUES (1, 1, ${date.toEpochDay()}, 0)
+                    """.trimIndent(),
+                )
+            }
+
+            helper.runMigrationsAndValidate(
+                TEST_DB,
+                3,
+                true,
+                AppDatabase.MIGRATION_1_2,
+                AppDatabase.MIGRATION_2_3,
+            )
+
+            val database = migratedDatabase()
+            val habit = database.habitDao().getById(1L)
+            assertEquals("Brush teeth", habit?.title)
+            assertNull("A habit from v1 belongs to no part of the day", habit?.timeOfDay)
+            assertNull("…and is still the checkbox kind", habit?.goalUnit)
+
+            val completedDates = database.habitCompletionDao().observeCompletions(1L).first()
+            assertEquals(listOf(date.toEpochDay()), completedDates.map { it.date })
+        }
+
     /** Opens the migrated file through Room itself, so the entities and the columns must agree. */
     private fun migratedDatabase(): AppDatabase =
         Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
             AppDatabase::class.java,
             TEST_DB,
-        ).addMigrations(AppDatabase.MIGRATION_1_2)
+        ).addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
             .also(helper::closeWhenFinished)
 

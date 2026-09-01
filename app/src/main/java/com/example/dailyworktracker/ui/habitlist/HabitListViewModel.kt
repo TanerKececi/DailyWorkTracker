@@ -2,7 +2,9 @@ package com.example.dailyworktracker.ui.habitlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dailyworktracker.data.model.TimeOfDay
 import com.example.dailyworktracker.data.model.TodayHabit
+import com.example.dailyworktracker.data.model.timeOfDay
 import com.example.dailyworktracker.data.model.toGoal
 import com.example.dailyworktracker.data.repository.HabitRepository
 import com.example.dailyworktracker.util.DateProvider
@@ -46,6 +48,24 @@ class HabitListViewModel
          */
         private var isFollowingToday = true
 
+        /** Which part of the day is being shown; null is "all day", the default. */
+        private val timeFilter = MutableStateFlow<TimeOfDay?>(null)
+
+        fun onTimeFilterSelected(time: TimeOfDay) {
+            timeFilter.value = time
+        }
+
+        /**
+         * Clears the filter.
+         *
+         * Its own method rather than passing null: a bare null in a binding expression types as
+         * Object and matches nothing, and the alternative - a cast in XML - is what this codebase
+         * has avoided everywhere else.
+         */
+        fun onAllTimesSelected() {
+            timeFilter.value = null
+        }
+
         val uiState: StateFlow<HabitListScreenState> =
             selectedDate
                 .flatMapLatest { date ->
@@ -53,14 +73,24 @@ class HabitListViewModel
                         repository.observeHabitsFor(date),
                         repository.observeActiveHabitCount(),
                         today,
-                    ) { habits, activeHabitCount, currentToday ->
+                        timeFilter,
+                    ) { habits, activeHabitCount, currentToday, filter ->
+                        // Exact match, so a habit tied to no particular time shows only under
+                        // "all day". Letting those through every filter would put most of the
+                        // list behind every chip and leave the filter saying nothing.
+                        val shown = habits.filter { filter == null || it.habit.timeOfDay() == filter }
+
                         HabitListScreenState(
                             selectedDate = date,
                             today = currentToday,
+                            timeFilter = filter,
                             displayState =
                                 when {
-                                    habits.isNotEmpty() ->
-                                        HabitListDisplayState.Content(habits.map(TodayHabit::toUiModel))
+                                    shown.isNotEmpty() ->
+                                        HabitListDisplayState.Content(shown.map(TodayHabit::toUiModel))
+
+                                    // Due today, just not in this part of the day.
+                                    habits.isNotEmpty() -> HabitListDisplayState.NothingAtThisTime
 
                                     // Habits exist, none is due this day: "no habits yet" would be wrong.
                                     activeHabitCount > 0 -> HabitListDisplayState.NothingScheduled
@@ -83,6 +113,7 @@ class HabitListViewModel
             HabitListScreenState(
                 selectedDate = selectedDate.value,
                 today = today.value,
+                timeFilter = timeFilter.value,
                 displayState = displayState,
             )
 

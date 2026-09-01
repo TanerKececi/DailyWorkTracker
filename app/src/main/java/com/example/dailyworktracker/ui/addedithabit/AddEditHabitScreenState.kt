@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.data.model.HabitGoal
 import com.example.dailyworktracker.data.model.HabitUnit
+import com.example.dailyworktracker.data.model.TimeOfDay
 import com.example.dailyworktracker.util.WeekdaySchedule
 import java.time.LocalTime
 
@@ -33,6 +34,8 @@ data class AddEditHabitScreenState(
      */
     val isAmountTracked: Boolean = false,
     val unit: HabitUnit = HabitUnit.TIMES,
+    /** Which part of the day the habit belongs to; null is "any time". */
+    val timeOfDay: TimeOfDay? = null,
     val displayState: AddEditHabitDisplayState = AddEditHabitDisplayState.Editing(),
 ) {
     val isEveryDay: Boolean get() = WeekdaySchedule.isEveryDay(scheduleDaysBitmask)

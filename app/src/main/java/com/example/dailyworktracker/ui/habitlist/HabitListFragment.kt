@@ -5,7 +5,6 @@ import android.view.View
 import android.widget.PopupMenu
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -18,8 +17,6 @@ import com.example.dailyworktracker.R
 import com.example.dailyworktracker.data.sample.SampleDataSeeder
 import com.example.dailyworktracker.databinding.FragmentHabitListBinding
 import com.example.dailyworktracker.ui.addedithabit.AddEditHabitViewModel.Companion.NEW_HABIT_ID
-import com.example.dailyworktracker.ui.common.DateLabelFormatter
-import com.example.dailyworktracker.ui.common.UiState
 import com.example.dailyworktracker.ui.common.viewBinding
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointBackward
@@ -55,11 +52,12 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         super.onViewCreated(view, savedInstanceState)
         applyWindowInsets()
         setUpToolbarMenu()
-        setUpDateBar()
+        // The date bar's stepper buttons are wired in the layout; only the picker needs a dialog.
+        binding.viewModel = viewModel
+        binding.buttonPickDate.setOnClickListener { showDatePicker() }
         binding.recyclerHabits.adapter = habitAdapter
         binding.fabAddHabit.setOnClickListener { navigateToHabitEditor(NEW_HABIT_ID) }
         observeUiState()
-        observeSelectedDate()
     }
 
     override fun onResume() {
@@ -68,16 +66,9 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         viewModel.onScreenResumed()
     }
 
-    private fun setUpDateBar() =
-        with(binding) {
-            buttonPreviousDay.setOnClickListener { viewModel.onPreviousDayClicked() }
-            buttonNextDay.setOnClickListener { viewModel.onNextDayClicked() }
-            buttonJumpToToday.setOnClickListener { viewModel.onTodayClicked() }
-            buttonPickDate.setOnClickListener { showDatePicker() }
-        }
-
     private fun showDatePicker() {
-        val today = viewModel.today()
+        val state = viewModel.uiState.value
+        val today = state.today
         val constraints =
             CalendarConstraints.Builder()
                 // Completing a day that has not happened yet is meaningless, so cap at today.
@@ -89,7 +80,7 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
             .datePicker()
             .setTitleText(R.string.date_picker_title)
             .setCalendarConstraints(constraints)
-            .setSelection(viewModel.selectedDate.value.toUtcMillis())
+            .setSelection(state.selectedDate.toUtcMillis())
             .build()
             .apply {
                 addOnPositiveButtonClickListener { millis ->
@@ -97,26 +88,6 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
                 }
             }.show(childFragmentManager, DATE_PICKER_TAG)
     }
-
-    private fun observeSelectedDate() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.selectedDate.collect(::renderSelectedDate)
-            }
-        }
-    }
-
-    private fun renderSelectedDate(date: LocalDate) =
-        with(binding) {
-            val today = viewModel.today()
-            val label = DateLabelFormatter.format(requireContext(), date, today)
-
-            buttonPickDate.text = label
-            toolbar.title = label
-            // Only shown off today, where it is the fastest way back.
-            buttonJumpToToday.isVisible = date != today
-            buttonNextDay.isEnabled = date.isBefore(today)
-        }
 
     private fun setUpToolbarMenu() =
         with(binding.toolbar) {
@@ -189,34 +160,20 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         super.onDestroyView()
     }
 
+    /**
+     * The layout renders itself from the state, including the date bar; this only hands each new
+     * value over.
+     *
+     * The state is assigned rather than bound as a StateFlow because databinding-ktx, which would
+     * observe the flow directly, is disabled - see the note in the module's build file.
+     */
     private fun observeUiState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect(::render)
+                viewModel.uiState.collect { binding.state = it }
             }
         }
     }
-
-    private fun render(state: UiState<List<HabitListItemUiModel>>) =
-        with(binding) {
-            progressLoading.isVisible = state is UiState.Loading
-            recyclerHabits.isVisible = state is UiState.Success
-            groupEmpty.isVisible = state is UiState.Empty
-            groupError.isVisible = state is UiState.Error
-
-            when (state) {
-                is UiState.Success -> habitAdapter.submitList(state.data)
-
-                is UiState.Empty -> {
-                    habitAdapter.submitList(emptyList())
-                    textEmptyTitle.setText(state.titleRes)
-                    textEmptyMessage.setText(state.messageRes)
-                }
-
-                is UiState.Error -> textErrorMessage.text = state.throwable.localizedMessage
-                UiState.Loading -> habitAdapter.submitList(emptyList())
-            }
-        }
 
     private fun showHabitMenu(
         item: HabitListItemUiModel,

@@ -1,49 +1,57 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+<?xml version="1.0" encoding="utf-8"?>
+<!--
   Key for the grid below it.
 
   The two swatches reuse the same drawables as the real cells and are tinted from the same source,
   so the key cannot drift away from what the grid actually draws.
+
+  Wrapped in <layout> only so the data-bound parent generates a binding for this include rather
+  than a bare View; it has no variables of its own.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:gravity="center_vertical"
-    android:orientation="horizontal">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <View
-        android:id="@+id/swatchDone"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
-        android:background="@drawable/bg_heatmap_day_filled"
-        android:importantForAccessibility="no" />
-
-    <TextView
-        android:id="@+id/labelDone"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="6dp"
-        android:text="@string/habit_detail_legend_done"
-        android:textAppearance="?attr/textAppearanceLabelSmall"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        tools:ignore="TextContrastCheck" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <View
-        android:id="@+id/swatchMissed"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
-        android:layout_marginStart="16dp"
-        android:background="@drawable/bg_heatmap_day_outlined"
-        android:importantForAccessibility="no" />
+        <View
+            android:id="@+id/swatchDone"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:background="@drawable/bg_heatmap_day_filled"
+            android:importantForAccessibility="no" />
 
-    <TextView
-        android:id="@+id/labelMissed"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="6dp"
-        android:text="@string/habit_detail_legend_missed"
-        android:textAppearance="?attr/textAppearanceLabelSmall"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        tools:ignore="TextContrastCheck" />
+        <TextView
+            android:id="@+id/labelDone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="@string/habit_detail_legend_done"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:ignore="TextContrastCheck" />
 
-</LinearLayout>
+        <View
+            android:id="@+id/swatchMissed"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/bg_heatmap_day_outlined"
+            android:importantForAccessibility="no" />
+
+        <TextView
+            android:id="@+id/labelMissed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="@string/habit_detail_legend_missed"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:ignore="TextContrastCheck" />
+
+    </LinearLayout>
+
+</layout>

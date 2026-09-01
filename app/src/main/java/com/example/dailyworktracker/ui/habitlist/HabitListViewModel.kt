@@ -2,17 +2,14 @@ package com.example.dailyworktracker.ui.habitlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.dailyworktracker.R
 import com.example.dailyworktracker.data.model.TodayHabit
 import com.example.dailyworktracker.data.repository.HabitRepository
-import com.example.dailyworktracker.ui.common.UiState
 import com.example.dailyworktracker.util.DateProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -29,10 +26,16 @@ class HabitListViewModel
         private val repository: HabitRepository,
         private val dateProvider: DateProvider,
     ) : ViewModel() {
-        private val _selectedDate = MutableStateFlow(dateProvider.today())
-
         /** The day being viewed and edited. Every other piece of screen state derives from it. */
-        val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
+        private val selectedDate = MutableStateFlow(dateProvider.today())
+
+        /**
+         * Today, re-read whenever the screen resumes.
+         *
+         * Held as state rather than called on demand so the date bar cannot disagree with the list:
+         * both are now decided in one place, at one moment.
+         */
+        private val today = MutableStateFlow(dateProvider.today())
 
         /**
          * Whether the selection means "whatever today is" rather than one specific day.
@@ -42,51 +45,55 @@ class HabitListViewModel
          */
         private var isFollowingToday = true
 
-        val uiState: StateFlow<UiState<List<HabitListItemUiModel>>> =
-            _selectedDate
+        val uiState: StateFlow<HabitListScreenState> =
+            selectedDate
                 .flatMapLatest { date ->
                     combine(
                         repository.observeHabitsFor(date),
                         repository.observeActiveHabitCount(),
-                    ) { habits, activeHabitCount ->
-                        when {
-                            habits.isNotEmpty() -> UiState.Success(habits.map(TodayHabit::toUiModel))
+                        today,
+                    ) { habits, activeHabitCount, currentToday ->
+                        HabitListScreenState(
+                            selectedDate = date,
+                            today = currentToday,
+                            displayState =
+                                when {
+                                    habits.isNotEmpty() ->
+                                        HabitListDisplayState.Content(habits.map(TodayHabit::toUiModel))
 
-                            // Habits exist, none is due this day: "no habits yet" would be wrong.
-                            activeHabitCount > 0 ->
-                                UiState.Empty(
-                                    titleRes = R.string.habit_list_nothing_scheduled_title,
-                                    messageRes = R.string.habit_list_nothing_scheduled_message,
-                                )
+                                    // Habits exist, none is due this day: "no habits yet" would be wrong.
+                                    activeHabitCount > 0 -> HabitListDisplayState.NothingScheduled
 
-                            else ->
-                                UiState.Empty(
-                                    titleRes = R.string.habit_list_empty_title,
-                                    messageRes = R.string.habit_list_empty_message,
-                                )
-                        }
+                                    else -> HabitListDisplayState.NoHabitsYet
+                                },
+                        )
                     }
                 }
-                .catch { emit(UiState.Error(it)) }
+                .catch { emit(screenState(HabitListDisplayState.Error(it))) }
                 .stateIn(
                     scope = viewModelScope,
                     // Keep the DB subscription briefly across config changes instead of re-querying.
                     started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-                    initialValue = UiState.Loading,
+                    initialValue = screenState(HabitListDisplayState.Loading),
                 )
 
-        /** Exposed so the view can label dates relative to it without a clock of its own. */
-        fun today(): LocalDate = dateProvider.today()
-
-        /** Future days cannot be completed, so stepping forward stops at today. */
-        fun canGoToNextDay(): Boolean = _selectedDate.value.isBefore(dateProvider.today())
+        /** The date bar renders in every state, so even Loading and Error carry the current dates. */
+        private fun screenState(displayState: HabitListDisplayState) =
+            HabitListScreenState(
+                selectedDate = selectedDate.value,
+                today = today.value,
+                displayState = displayState,
+            )
 
         fun onPreviousDayClicked() {
-            select(_selectedDate.value.minusDays(1))
+            select(selectedDate.value.minusDays(1))
         }
 
         fun onNextDayClicked() {
-            if (canGoToNextDay()) select(_selectedDate.value.plusDays(1))
+            // Guarded here as well as in the view: the future is never completable.
+            if (selectedDate.value.isBefore(dateProvider.today())) {
+                select(selectedDate.value.plusDays(1))
+            }
         }
 
         fun onTodayClicked() {
@@ -102,21 +109,24 @@ class HabitListViewModel
          * Re-resolves today when the screen comes back to the foreground.
          *
          * An app left open past midnight would otherwise keep showing the previous day. Only a
-         * selection that still means "today" moves, so a deliberately chosen past date stays put.
+         * selection that still means "today" moves, so a deliberately chosen past date stays put -
+         * but [today] always advances, so the date bar stays right either way.
          */
         fun onScreenResumed() {
+            val resumedToday = dateProvider.today()
+            today.value = resumedToday
             if (isFollowingToday) {
-                _selectedDate.value = dateProvider.today()
+                selectedDate.value = resumedToday
             }
         }
 
         private fun select(date: LocalDate) {
             isFollowingToday = date == dateProvider.today()
-            _selectedDate.value = date
+            selectedDate.value = date
         }
 
         fun onHabitCheckedChanged(habitId: Long) {
-            val date = _selectedDate.value
+            val date = selectedDate.value
             viewModelScope.launch { repository.toggleCompletion(habitId, date) }
         }
 

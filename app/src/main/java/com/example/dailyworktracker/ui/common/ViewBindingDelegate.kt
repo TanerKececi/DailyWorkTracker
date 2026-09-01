@@ -1,6 +1,8 @@
 package com.example.dailyworktracker.ui.common
 
 import android.view.View
+import androidx.databinding.DataBindingUtil
+import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -48,7 +50,16 @@ class ViewBindingDelegate<T : ViewBinding>(
     ): T {
         val view = thisRef.requireView()
         binding?.let { cached -> if (boundView === view) return cached }
-        return bind(view).also {
+
+        // A data binding may be created only once per view: binding a second time throws
+        // "view must have a tag". That happens on the path this class already guards - the cache is
+        // cleared when the view lifecycle is destroyed, which is *before* `onDestroyView` runs, so a
+        // Fragment cleaning up there asks for the binding again. Reuse whatever is already attached
+        // to the view; plain ViewBinding layouts have nothing attached and fall through to bind().
+        @Suppress("UNCHECKED_CAST")
+        val attached = DataBindingUtil.getBinding<ViewDataBinding>(view) as T?
+
+        return (attached ?: bind(view)).also {
             binding = it
             boundView = view
         }

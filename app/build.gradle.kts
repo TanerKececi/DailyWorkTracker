@@ -2,6 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
+    // Data binding's annotation processor has no KSP equivalent, so kapt runs alongside KSP.
+    // Versionless: kapt ships with the Kotlin plugin already on the classpath, and naming a
+    // version here fails resolution ("already on the classpath with an unknown version").
+    kotlin("kapt")
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.navigation.safeargs.kotlin)
     alias(libs.plugins.ktlint)
@@ -31,7 +35,17 @@ android {
         testInstrumentationRunner = "com.example.dailyworktracker.HiltTestRunner"
     }
 
+    // databinding-ktx is built against Kotlin 2.2 and fails to load under this project's 2.0.21.
+    // It only adds direct StateFlow/LiveData binding in XML, which we do not use: Fragments
+    // collect their StateFlow and assign `binding.state`, so the Java runtime alone is enough.
+    dataBinding {
+        addKtx = false
+    }
+
     buildFeatures {
+        dataBinding = true
+        // Kept alongside dataBinding: layouts without a <layout> root - the widget's RemoteViews
+        // layouts and the heatmap cells - still generate ViewBinding classes and keep working.
         viewBinding = true
         // Needed for the BuildConfig.DEBUG guard around the sample-data tool.
         buildConfig = true

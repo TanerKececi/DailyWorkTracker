@@ -4,7 +4,7 @@ import app.cash.turbine.test
 import com.example.dailyworktracker.fake.FakeHabitRepository
 import com.example.dailyworktracker.fake.habit
 import com.example.dailyworktracker.testing.MainDispatcherRule
-import com.example.dailyworktracker.ui.common.UiState
+import com.example.dailyworktracker.ui.allhabits.AllHabitsDisplayState.Content
 import com.example.dailyworktracker.util.WeekdaySchedule
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -35,10 +35,10 @@ class AllHabitsViewModelTest {
             )
 
             viewModel().uiState.test {
-                assertEquals(UiState.Loading, awaitItem())
+                assertEquals(AllHabitsDisplayState.Loading, awaitItem())
                 assertEquals(
                     listOf("Due Wednesday"),
-                    (awaitItem() as UiState.Success).data.map { it.title },
+                    (awaitItem() as Content).habits.map { it.title },
                 )
             }
         }
@@ -49,9 +49,9 @@ class AllHabitsViewModelTest {
             repository.seed(habit(id = 1L, title = "Archived one", isArchived = true))
 
             viewModel().uiState.test {
-                assertEquals(UiState.Loading, awaitItem())
+                assertEquals(AllHabitsDisplayState.Loading, awaitItem())
 
-                val item = (awaitItem() as UiState.Success).data.single()
+                val item = (awaitItem() as Content).habits.single()
                 assertTrue(item.isArchived)
             }
         }
@@ -65,10 +65,10 @@ class AllHabitsViewModelTest {
             )
 
             viewModel().uiState.test {
-                assertEquals(UiState.Loading, awaitItem())
+                assertEquals(AllHabitsDisplayState.Loading, awaitItem())
                 assertEquals(
                     listOf("Active", "Archived"),
-                    (awaitItem() as UiState.Success).data.map { it.title },
+                    (awaitItem() as Content).habits.map { it.title },
                 )
             }
         }
@@ -80,12 +80,12 @@ class AllHabitsViewModelTest {
             val viewModel = viewModel()
 
             viewModel.uiState.test {
-                assertEquals(UiState.Loading, awaitItem())
-                assertFalse((awaitItem() as UiState.Success).data.single().isArchived)
+                assertEquals(AllHabitsDisplayState.Loading, awaitItem())
+                assertFalse((awaitItem() as Content).habits.single().isArchived)
 
                 viewModel.onArchiveToggled(habitId = 1L, isCurrentlyArchived = false)
 
-                assertTrue((awaitItem() as UiState.Success).data.single().isArchived)
+                assertTrue((awaitItem() as Content).habits.single().isArchived)
             }
 
             assertEquals(listOf(1L), repository.archivedIds)
@@ -98,12 +98,12 @@ class AllHabitsViewModelTest {
             val viewModel = viewModel()
 
             viewModel.uiState.test {
-                assertEquals(UiState.Loading, awaitItem())
-                assertTrue((awaitItem() as UiState.Success).data.single().isArchived)
+                assertEquals(AllHabitsDisplayState.Loading, awaitItem())
+                assertTrue((awaitItem() as Content).habits.single().isArchived)
 
                 viewModel.onArchiveToggled(habitId = 1L, isCurrentlyArchived = true)
 
-                assertFalse((awaitItem() as UiState.Success).data.single().isArchived)
+                assertFalse((awaitItem() as Content).habits.single().isArchived)
             }
 
             assertEquals(listOf(1L), repository.unarchivedIds)
@@ -113,8 +113,8 @@ class AllHabitsViewModelTest {
     fun `reports empty when no habits exist`() =
         runTest {
             viewModel().uiState.test {
-                assertEquals(UiState.Loading, awaitItem())
-                assertTrue(awaitItem() is UiState.Empty)
+                assertEquals(AllHabitsDisplayState.Loading, awaitItem())
+                assertTrue(awaitItem() is AllHabitsDisplayState.Empty)
             }
         }
 }

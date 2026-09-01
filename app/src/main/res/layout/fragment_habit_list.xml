@@ -1,164 +1,192 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appBarLayout"
+    <data>
+
+        <variable
+            name="state"
+            type="com.example.dailyworktracker.ui.habitlist.HabitListScreenState" />
+
+        <variable
+            name="viewModel"
+            type="com.example.dailyworktracker.ui.habitlist.HabitListViewModel" />
+
+    </data>
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
+        android:layout_height="match_parent">
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="@string/habit_list_title" />
-
-        <!--
-          The date bar lives in the AppBarLayout rather than the content area so it stays on screen
-          in every UiState. If it were part of the content it would disappear on an empty past day,
-          leaving no control to navigate back.
-        -->
-        <LinearLayout
-            android:id="@+id/barDate"
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="4dp"
-            android:paddingBottom="8dp">
+            android:fitsSystemWindows="true">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonPreviousDay"
-                style="@style/Widget.Material3.Button.IconButton"
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:dateLabel="@{state.selectedDate}"
+                app:relativeTo="@{state.today}"
+                tools:title="@string/habit_list_title" />
+
+            <!--
+              The date bar lives in the AppBarLayout rather than the content area so it stays on
+              screen in every display state. If it were part of the content it would disappear on an
+              empty past day, leaving no control to navigate back.
+            -->
+            <LinearLayout
+                android:id="@+id/barDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="4dp"
+                android:paddingBottom="8dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonPreviousDay"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@string/date_previous_day"
+                    android:onClick="@{() -> viewModel.onPreviousDayClicked()}"
+                    app:icon="@drawable/ic_chevron_left" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonPickDate"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/date_pick_day"
+                    app:dateLabel="@{state.selectedDate}"
+                    app:icon="@drawable/ic_calendar"
+                    app:iconGravity="textStart"
+                    app:relativeTo="@{state.today}"
+                    tools:text="@string/date_today" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonNextDay"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@string/date_next_day"
+                    android:enabled="@{state.canGoToNextDay}"
+                    android:onClick="@{() -> viewModel.onNextDayClicked()}"
+                    app:icon="@drawable/ic_chevron_right" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonJumpToToday"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:onClick="@{() -> viewModel.onTodayClicked()}"
+                    android:text="@string/date_jump_to_today"
+                    app:visibleIf="@{state.showJumpToToday}"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerHabits"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingTop="8dp"
+            android:paddingBottom="96dp"
+            app:items="@{state.habits}"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            app:visibleIf="@{state.content}"
+            tools:itemCount="4"
+            tools:listitem="@layout/item_habit" />
+
+        <androidx.core.widget.ContentLoadingProgressBar
+            android:id="@+id/progressLoading"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            app:visibleIf="@{state.loading}" />
+
+        <LinearLayout
+            android:id="@+id/groupEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="48dp"
+            app:visibleIf="@{state.empty}"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/textEmptyTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:contentDescription="@string/date_previous_day"
-                app:icon="@drawable/ic_chevron_left" />
+                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                app:textRes="@{state.emptyTitleRes}"
+                tools:text="@string/habit_list_empty_title" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonPickDate"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/textEmptyMessage"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:contentDescription="@string/date_pick_day"
-                app:icon="@drawable/ic_calendar"
-                app:iconGravity="textStart"
-                tools:text="@string/date_today" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonNextDay"
-                style="@style/Widget.Material3.Button.IconButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:contentDescription="@string/date_next_day"
-                app:icon="@drawable/ic_chevron_right" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonJumpToToday"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:text="@string/date_jump_to_today"
-                android:visibility="gone"
-                tools:visibility="visible" />
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                app:textRes="@{state.emptyMessageRes}"
+                tools:text="@string/habit_list_empty_message" />
 
         </LinearLayout>
 
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerHabits"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:paddingTop="8dp"
-        android:paddingBottom="96dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        tools:itemCount="4"
-        tools:listitem="@layout/item_habit" />
-
-    <androidx.core.widget.ContentLoadingProgressBar
-        android:id="@+id/progressLoading"
-        style="?android:attr/progressBarStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:visibility="gone"
-        tools:visibility="visible" />
-
-    <LinearLayout
-        android:id="@+id/groupEmpty"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:paddingHorizontal="48dp"
-        android:visibility="gone"
-        tools:visibility="visible">
-
-        <TextView
-            android:id="@+id/textEmptyTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceHeadlineSmall"
-            tools:text="@string/habit_list_empty_title" />
-
-        <TextView
-            android:id="@+id/textEmptyMessage"
+        <LinearLayout
+            android:id="@+id/groupError"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_gravity="center"
             android:gravity="center"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            tools:text="@string/habit_list_empty_message" />
+            android:orientation="vertical"
+            android:paddingHorizontal="48dp"
+            app:visibleIf="@{state.error}"
+            tools:visibility="gone">
 
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/habit_list_error_title"
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-    <LinearLayout
-        android:id="@+id/groupError"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:paddingHorizontal="48dp"
-        android:visibility="gone"
-        tools:visibility="gone">
+            <TextView
+                android:id="@+id/textErrorMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@{state.errorMessage}"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="Database unavailable" />
 
-        <TextView
+        </LinearLayout>
+
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/fabAddHabit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/habit_list_error_title"
-            android:textAppearance="?attr/textAppearanceTitleMedium" />
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:text="@string/habit_list_add_habit"
+            app:icon="@drawable/ic_add" />
 
-        <TextView
-            android:id="@+id/textErrorMessage"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:textAppearance="?attr/textAppearanceBodySmall"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            tools:text="Database unavailable" />
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-    </LinearLayout>
-
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/fabAddHabit"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:text="@string/habit_list_add_habit"
-        app:icon="@drawable/ic_add" />
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>

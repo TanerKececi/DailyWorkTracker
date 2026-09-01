@@ -19,7 +19,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.BottomsheetAddEditHabitBinding
-import com.example.dailyworktracker.ui.common.TimeFormatter
 import com.example.dailyworktracker.util.WeekdaySchedule
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.chip.Chip
@@ -56,7 +55,7 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
      */
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-            renderReminder(viewModel.uiState.value)
+            renderReminderWarning(viewModel.uiState.value)
         }
 
     override fun onCreateView(
@@ -73,6 +72,8 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
+        // Save is wired in the layout; the rest need a dialog, a dismiss, or a permission request.
+        binding.viewModel = viewModel
         setUpDayChips()
         setUpInputs()
         reconnectTimePicker()
@@ -102,21 +103,20 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
     private fun setUpInputs() =
         with(binding) {
             editTitle.doAfterTextChanged { text ->
-                if (!isBindingState) viewModel.onTitleChanged(text?.toString().orEmpty())
+                if (!isBindingState) this@AddEditHabitFragment.viewModel.onTitleChanged(text?.toString().orEmpty())
             }
             editEmoji.doAfterTextChanged { text ->
-                if (!isBindingState) viewModel.onEmojiChanged(text?.toString().orEmpty())
+                if (!isBindingState) this@AddEditHabitFragment.viewModel.onEmojiChanged(text?.toString().orEmpty())
             }
             switchEveryDay.setOnCheckedChangeListener { _, isChecked ->
-                if (!isBindingState) viewModel.onEveryDayToggled(isChecked)
+                if (!isBindingState) this@AddEditHabitFragment.viewModel.onEveryDayToggled(isChecked)
             }
             switchReminder.setOnCheckedChangeListener { _, isChecked ->
                 if (isBindingState) return@setOnCheckedChangeListener
-                viewModel.onReminderEnabledChanged(isChecked)
+                this@AddEditHabitFragment.viewModel.onReminderEnabledChanged(isChecked)
                 if (isChecked) requestNotificationPermissionIfNeeded()
             }
             buttonReminderTime.setOnClickListener { showTimePicker() }
-            buttonSave.setOnClickListener { viewModel.onSaveClicked() }
             buttonCancel.setOnClickListener { dismiss() }
         }
 
@@ -163,7 +163,14 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
         }
     }
 
-    private fun render(state: AddEditHabitUiState) =
+    /**
+     * Hands the state to the layout, which draws everything it can express on its own.
+     *
+     * What stays here is what XML cannot say: the day chips are built in code from
+     * [DayOfWeek.entries], and the reminder warning depends on a runtime permission rather than on
+     * state. The guard keeps those writes from being read back as user input.
+     */
+    private fun render(state: AddEditHabitScreenState) =
         with(binding) {
             if (state.isSaved) {
                 dismiss()
@@ -172,32 +179,16 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
 
             isBindingState = true
 
-            textSheetTitle.setText(
-                if (state.isEditing) R.string.edit_habit_title else R.string.add_habit_title,
-            )
-
-            // Only write text back when it differs, otherwise the cursor jumps to the start on each keystroke.
-            if (editTitle.text?.toString() != state.title) {
-                editTitle.setText(state.title)
-                editTitle.setSelection(state.title.length)
-            }
-            if (editEmoji.text?.toString() != state.emoji) {
-                editEmoji.setText(state.emoji)
-            }
+            binding.state = state
+            // Bindings are applied now rather than next frame, so the guard below still covers them.
+            executePendingBindings()
 
             chipGroupDays.children.filterIsInstance<Chip>().forEach { chip ->
                 val day = chip.tag as DayOfWeek
                 chip.isChecked = WeekdaySchedule.isScheduledOn(state.scheduleDaysBitmask, day)
             }
-            switchEveryDay.isChecked = WeekdaySchedule.isEveryDay(state.scheduleDaysBitmask)
 
-            renderReminder(state)
-
-            inputLayoutTitle.error = state.titleError?.let(::getString)
-            textScheduleError.isVisible = state.scheduleError != null
-            state.scheduleError?.let(textScheduleError::setText)
-
-            buttonSave.isEnabled = !state.isSaving
+            renderReminderWarning(state)
 
             isBindingState = false
         }
@@ -205,21 +196,19 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
     override fun onResume() {
         super.onResume()
         // Notifications may have been turned on or off in Settings while the sheet was open.
-        renderReminder(viewModel.uiState.value)
+        renderReminderWarning(viewModel.uiState.value)
     }
 
-    private fun renderReminder(state: AddEditHabitUiState) =
-        with(binding) {
-            switchReminder.isChecked = state.isReminderEnabled
-            buttonReminderTime.isVisible = state.isReminderEnabled
-            textReminderWarning.isVisible =
-                state.isReminderEnabled && !canPostNotifications()
-
-            val formatted = TimeFormatter.format(requireContext(), state.reminderTime)
-            buttonReminderTime.text = formatted
-            buttonReminderTime.contentDescription =
-                getString(R.string.add_habit_reminder_time_description, formatted)
-        }
+    /**
+     * The switch and the time button are bound from state; only this warning is not.
+     *
+     * Whether notifications can be posted is a runtime permission, which can change while the sheet
+     * is open and is not something the ViewModel should be tracking.
+     */
+    private fun renderReminderWarning(state: AddEditHabitScreenState) {
+        binding.textReminderWarning.isVisible =
+            state.isReminderEnabled && !canPostNotifications()
+    }
 
     private fun requestNotificationPermissionIfNeeded() {
         if (canPostNotifications()) return

@@ -3,6 +3,7 @@ package com.example.dailyworktracker.ui.habitlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dailyworktracker.data.model.TodayHabit
+import com.example.dailyworktracker.data.model.toGoal
 import com.example.dailyworktracker.data.repository.HabitRepository
 import com.example.dailyworktracker.util.DateProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -130,6 +131,20 @@ class HabitListViewModel
             viewModelScope.launch { repository.toggleCompletion(habitId, date) }
         }
 
+        /**
+         * Records what was done on the day being viewed, for a habit logged as a number.
+         *
+         * Takes the date from the selection for the same reason [onHabitCheckedChanged] does:
+         * backfilling must land on the day on screen, never on today.
+         */
+        fun onAmountEntered(
+            habitId: Long,
+            amount: Int,
+        ) {
+            val date = selectedDate.value
+            viewModelScope.launch { repository.setAmount(habitId, date, amount) }
+        }
+
         fun onHabitArchived(habitId: Long) {
             viewModelScope.launch { repository.archiveHabit(habitId) }
         }
@@ -147,4 +162,6 @@ private fun TodayHabit.toUiModel() =
         isCompleted = isCompleted,
         scheduleDaysBitmask = habit.scheduleDaysBitmask,
         currentStreak = currentStreak,
+        goal = habit.toGoal(),
+        amount = amount,
     )

@@ -31,4 +31,11 @@ data class HabitCompletion(
     val date: Long,
     /** When the user actually ticked it off, in epoch millis. */
     val completedAt: Long,
+    /**
+     * How much was done that day - 12 pages, 30 minutes - or null for a tick-it-off habit.
+     *
+     * The amount is a record, not a goal: the row existing is what makes the day complete, exactly
+     * as before this column existed. Nothing derives completeness from this value.
+     */
+    val amount: Int? = null,
 )

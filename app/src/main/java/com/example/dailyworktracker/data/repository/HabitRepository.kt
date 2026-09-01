@@ -26,7 +26,8 @@ interface HabitRepository {
     /** Every habit, including archived ones, for the management screen. */
     fun observeAllHabits(): Flow<List<Habit>>
 
-    fun observeCompletionDates(habitId: Long): Flow<List<LocalDate>>
+    /** Completed days for one habit, each with the amount logged on it (null when none was). */
+    fun observeCompletions(habitId: Long): Flow<Map<LocalDate, Int?>>
 
     suspend fun getHabit(habitId: Long): Habit?
 
@@ -63,5 +64,17 @@ interface HabitRepository {
     suspend fun toggleCompletion(
         habitId: Long,
         date: LocalDate,
+    )
+
+    /**
+     * Records [amount] against [habitId] on [date] for an amount habit.
+     *
+     * An amount of zero or less removes the record, which is how a mistake is corrected. Any other
+     * amount marks the day done: the number is what was achieved, not a target to clear.
+     */
+    suspend fun setAmount(
+        habitId: Long,
+        date: LocalDate,
+        amount: Int,
     )
 }

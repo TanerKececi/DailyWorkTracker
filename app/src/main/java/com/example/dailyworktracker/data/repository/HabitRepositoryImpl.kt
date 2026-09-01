@@ -42,6 +42,13 @@ class HabitRepositoryImpl
                         .groupBy({ it.habitId }, { LocalDate.ofEpochDay(it.date) })
                         .mapValues { (_, dates) -> dates.toSet() }
 
+                // Only the day being shown needs its amount; streaks still care only about which
+                // days have a row at all, which is why they keep taking a plain Set<LocalDate>.
+                val amountsOnDate =
+                    completions
+                        .filter { it.date == date.toEpochDay() }
+                        .associateBy({ it.habitId }, { it.amount })
+
                 habits
                     .filter { HabitVisibility.isActiveOn(it.habit, date) }
                     .map { habitWithStatus ->
@@ -54,15 +61,16 @@ class HabitRepositoryImpl
                                     scheduleDaysBitmask = habitWithStatus.habit.scheduleDaysBitmask,
                                     asOf = date,
                                 ),
+                            amount = amountsOnDate[habitWithStatus.habit.id],
                         )
                     }
             }
 
         override fun observeActiveHabitCount(): Flow<Int> = habitDao.observeActiveHabitCount()
 
-        override fun observeCompletionDates(habitId: Long): Flow<List<LocalDate>> =
-            completionDao.observeCompletionDates(habitId)
-                .map { dates -> dates.map(LocalDate::ofEpochDay) }
+        override fun observeCompletions(habitId: Long): Flow<Map<LocalDate, Int?>> =
+            completionDao.observeCompletions(habitId)
+                .map { rows -> rows.associateBy({ LocalDate.ofEpochDay(it.date) }, { it.amount }) }
 
         override suspend fun getHabit(habitId: Long): Habit? = habitDao.getById(habitId)
 
@@ -118,6 +126,31 @@ class HabitRepositoryImpl
                         completedAt = System.currentTimeMillis(),
                     ),
                 )
+            }
+            widgetUpdater.onHabitsChanged()
+        }
+
+        override suspend fun setAmount(
+            habitId: Long,
+            date: LocalDate,
+            amount: Int,
+        ) {
+            val epochDay = date.toEpochDay()
+            val existing = completionDao.getCompletion(habitId, epochDay)
+
+            when {
+                // Clearing the amount clears the day: there is no "done, but zero pages".
+                amount <= 0 -> existing?.let { completionDao.delete(it) }
+                existing != null -> completionDao.updateAmount(habitId, epochDay, amount)
+                else ->
+                    completionDao.insert(
+                        HabitCompletion(
+                            habitId = habitId,
+                            date = epochDay,
+                            completedAt = System.currentTimeMillis(),
+                            amount = amount,
+                        ),
+                    )
             }
             widgetUpdater.onHabitsChanged()
         }

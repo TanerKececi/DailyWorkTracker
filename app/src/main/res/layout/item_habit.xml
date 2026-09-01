@@ -82,6 +82,10 @@
                 tools:text="&#x1F525; 5 day streak"
                 tools:visibility="visible" />
 
+            <!--
+              A row is ticked off or logged, never both: the checkbox and the amount button occupy
+              the same slot and exactly one of them is on screen.
+            -->
             <com.google.android.material.checkbox.MaterialCheckBox
                 android:id="@+id/checkboxCompleted"
                 android:layout_width="wrap_content"
@@ -90,7 +94,22 @@
                 android:contentDescription="@{@string/habit_completed_checkbox(item.title)}"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/buttonMore"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:visibleIf="@{!item.amountTracked}" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonAmount"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@{@string/habit_amount_description(item.title)}"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/buttonMore"
+                app:layout_constraintTop_toTopOf="parent"
+                app:loggedAmount="@{item.amount}"
+                app:loggedUnit="@{item.unit}"
+                app:visibleIf="@{item.amountTracked}"
+                tools:text="12 pages" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonMore"

@@ -15,6 +15,7 @@ import com.example.dailyworktracker.databinding.ItemHabitBinding
  */
 class HabitListAdapter(
     private val onToggleCompleted: (habitId: Long) -> Unit,
+    private val onAmountClicked: (item: HabitListItemUiModel) -> Unit,
     private val onMoreClicked: (item: HabitListItemUiModel, anchor: View) -> Unit,
 ) : ListAdapter<HabitListItemUiModel, HabitListAdapter.HabitViewHolder>(DIFF_CALLBACK) {
     override fun onCreateViewHolder(
@@ -43,8 +44,11 @@ class HabitListAdapter(
                 // the item, and a change listener would fire on rebind and toggle whichever habit
                 // previously occupied this recycled holder.
                 checkboxCompleted.setOnClickListener { onToggleCompleted(item.id) }
-                // Tapping anywhere on the row is the primary action: check it off.
-                root.setOnClickListener { onToggleCompleted(item.id) }
+                buttonAmount.setOnClickListener { onAmountClicked(item) }
+                // Tapping anywhere on the row does whatever that row's control does.
+                root.setOnClickListener {
+                    if (item.isAmountTracked) onAmountClicked(item) else onToggleCompleted(item.id)
+                }
                 buttonMore.setOnClickListener { onMoreClicked(item, it) }
 
                 // Data binding defers to the next frame by default, which shows the recycled row's

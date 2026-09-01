@@ -2,6 +2,9 @@ package com.example.dailyworktracker.ui.habitdetail
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.example.dailyworktracker.data.model.HabitGoal
+import com.example.dailyworktracker.data.model.HabitUnit
+import com.example.dailyworktracker.data.model.withGoal
 import com.example.dailyworktracker.fake.FakeDateProvider
 import com.example.dailyworktracker.fake.FakeHabitRepository
 import com.example.dailyworktracker.fake.habit
@@ -10,6 +13,8 @@ import com.example.dailyworktracker.ui.habitdetail.HabitDetailDisplayState.Conte
 import com.example.dailyworktracker.util.WeekdaySchedule
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -76,6 +81,53 @@ class HabitDetailViewModelTest {
                         .first { it.date == gutter.weekStart }
                 assertEquals(mondayCell.isAlternateMonth, gutter.isAlternateMonth)
             }
+        }
+
+    @Test
+    fun `the chart covers a fixed week, including days with nothing logged`() =
+        runTest {
+            repository.seed(habit(id = 1L).withGoal(HabitGoal.Amount(HabitUnit.PAGES)))
+            repository.setAmount(habitId = 1L, date = monday, amount = 12)
+            repository.setAmount(habitId = 1L, date = monday.minusDays(2), amount = 30)
+
+            val bars = awaitDetail().recentAmounts
+
+            assertEquals(HabitDetailViewModel.CHART_DAYS, bars.size)
+            // Oldest first, ending today, so the bars read left to right.
+            assertEquals(monday.minusDays(HabitDetailViewModel.CHART_DAYS - 1L), bars.first().date)
+            assertEquals(monday, bars.last().date)
+            // A day with no record is a zero bar rather than a missing column.
+            assertEquals(12, bars.last().amount)
+            assertEquals(30, bars.first { it.date == monday.minusDays(2) }.amount)
+            assertEquals(0, bars.first { it.date == monday.minusDays(1) }.amount)
+        }
+
+    @Test
+    fun `the total adds up everything ever logged`() =
+        runTest {
+            repository.seed(habit(id = 1L).withGoal(HabitGoal.Amount(HabitUnit.PAGES)))
+            repository.setAmount(habitId = 1L, date = monday, amount = 12)
+            // Well outside the chart's week, so the total is not just the visible bars.
+            repository.setAmount(habitId = 1L, date = monday.minusDays(100), amount = 30)
+
+            val state = awaitDetail()
+
+            assertEquals(42, state.totalAmount)
+            assertEquals(HabitUnit.PAGES, state.unit)
+            assertTrue(state.isAmountTracked)
+        }
+
+    @Test
+    fun `a ticked-off habit reports no unit and no total`() =
+        runTest {
+            repository.seed(habit(id = 1L))
+            repository.toggleCompletion(habitId = 1L, date = monday)
+
+            val state = awaitDetail()
+
+            assertNull(state.unit)
+            assertEquals(0, state.totalAmount)
+            assertFalse(state.isAmountTracked)
         }
 
     @Test

@@ -51,6 +51,13 @@ android {
         buildConfig = true
     }
 
+    // MigrationTestHelper reads the exported schemas from the test APK's assets.
+    sourceSets {
+        getByName("androidTest") {
+            assets.srcDirs(files("$projectDir/schemas"))
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

@@ -13,4 +13,6 @@ data class TodayHabit(
     val habit: Habit,
     val isCompleted: Boolean,
     val currentStreak: Int,
+    /** What was logged that day for an amount habit; null for a tick-it-off habit. */
+    val amount: Int? = null,
 )

@@ -2,6 +2,8 @@ package com.example.dailyworktracker.ui.addedithabit
 
 import androidx.annotation.StringRes
 import com.example.dailyworktracker.R
+import com.example.dailyworktracker.data.model.HabitGoal
+import com.example.dailyworktracker.data.model.HabitUnit
 import com.example.dailyworktracker.util.WeekdaySchedule
 import java.time.LocalTime
 
@@ -24,9 +26,20 @@ data class AddEditHabitScreenState(
      */
     val isReminderEnabled: Boolean = false,
     val reminderTime: LocalTime = DEFAULT_REMINDER_TIME,
+    /**
+     * Whether the habit is logged as a number, kept apart from [unit] for the same reason
+     * [isReminderEnabled] is kept apart from [reminderTime]: switching tracking off must not
+     * destroy the unit the user had already picked.
+     */
+    val isAmountTracked: Boolean = false,
+    val unit: HabitUnit = HabitUnit.TIMES,
     val displayState: AddEditHabitDisplayState = AddEditHabitDisplayState.Editing(),
 ) {
     val isEveryDay: Boolean get() = WeekdaySchedule.isEveryDay(scheduleDaysBitmask)
+
+    /** What actually gets saved: the two fields above collapsed into the stored shape. */
+    val goal: HabitGoal
+        get() = if (isAmountTracked) HabitGoal.Amount(unit) else HabitGoal.Once
 
     @get:StringRes
     val sheetTitleRes: Int

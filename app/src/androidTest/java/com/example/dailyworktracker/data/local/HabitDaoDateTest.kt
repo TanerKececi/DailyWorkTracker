@@ -125,6 +125,6 @@ class HabitDaoDateTest {
             complete(habitId, monday)
             complete(habitId, monday)
 
-            assertEquals(1, completionDao.observeCompletionDates(habitId).first().size)
+            assertEquals(1, completionDao.observeCompletions(habitId).first().size)
         }
 }

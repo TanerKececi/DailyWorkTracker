@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dailyworktracker.data.local.entity.Habit
+import com.example.dailyworktracker.data.model.HabitGoal
+import com.example.dailyworktracker.data.model.toGoal
 import com.example.dailyworktracker.data.repository.HabitRepository
 import com.example.dailyworktracker.util.DateProvider
 import com.example.dailyworktracker.util.HabitStatistics
@@ -36,13 +38,13 @@ class HabitDetailViewModel
         val uiState: StateFlow<HabitDetailDisplayState> =
             combine(
                 repository.observeHabit(habitId),
-                repository.observeCompletionDates(habitId),
-            ) { habit, completionDates ->
+                repository.observeCompletions(habitId),
+            ) { habit, completions ->
                 // Archiving or deleting the habit elsewhere leaves this screen with nothing to show.
                 if (habit == null) {
                     HabitDetailDisplayState.Missing
                 } else {
-                    HabitDetailDisplayState.Content(buildState(habit, completionDates.toSet()))
+                    HabitDetailDisplayState.Content(buildState(habit, completions))
                 }
             }
                 .catch { emit(HabitDetailDisplayState.Error(it)) }
@@ -54,8 +56,10 @@ class HabitDetailViewModel
 
         private fun buildState(
             habit: Habit,
-            completed: Set<LocalDate>,
+            completions: Map<LocalDate, Int?>,
         ): HabitDetailUiState {
+            // Streaks and statistics only ever ask which days have a record, never how much.
+            val completed = completions.keys
             val today = dateProvider.today()
             val createdOn = HabitVisibility.createdDate(habit)
 
@@ -75,9 +79,27 @@ class HabitDetailViewModel
                         to = today,
                     ),
                 completedCount = completed.size,
-                heatmap = buildHeatmap(habit, completed, createdOn, today),
+                heatmap = buildHeatmap(habit, completions, createdOn, today),
+                unit = (habit.toGoal() as? HabitGoal.Amount)?.unit,
+                totalAmount = completions.values.sumOf { it ?: 0 },
+                recentAmounts = recentAmounts(completions, today),
             )
         }
+
+        /**
+         * The last [CHART_DAYS] calendar days, most recent last.
+         *
+         * A day with no record contributes a zero-height bar rather than being left out, so the
+         * dates along the bottom stay evenly spaced and a gap reads as a gap.
+         */
+        private fun recentAmounts(
+            completions: Map<LocalDate, Int?>,
+            today: LocalDate,
+        ): List<DailyAmount> =
+            (CHART_DAYS - 1 downTo 0).map { back ->
+                val date = today.minusDays(back.toLong())
+                DailyAmount(date = date, amount = completions[date] ?: 0)
+            }
 
         /**
          * Whole weeks ending on the week containing today, each row being a month gutter followed by
@@ -90,10 +112,11 @@ class HabitDetailViewModel
          */
         private fun buildHeatmap(
             habit: Habit,
-            completed: Set<LocalDate>,
+            completions: Map<LocalDate, Int?>,
             createdOn: LocalDate,
             today: LocalDate,
         ): List<HeatmapItem> {
+            val completed = completions.keys
             val lastDay = today.with(DayOfWeek.SUNDAY)
             val earliestShown = lastDay.minusWeeks(WEEKS_SHOWN - 1L).with(DayOfWeek.MONDAY)
             val firstMonday = maxOf(earliestShown, createdOn.with(DayOfWeek.MONDAY))
@@ -153,6 +176,9 @@ class HabitDetailViewModel
         companion object {
             const val ARG_HABIT_ID = "habitId"
             const val WEEKS_SHOWN = 12
+
+            /** A month of bars. The chart scrolls, so the limit is how far back is interesting. */
+            const val CHART_DAYS = 30
             const val DAYS_PER_WEEK = 7
 
             /** A month gutter plus its seven days; the grid is laid out in this many columns. */

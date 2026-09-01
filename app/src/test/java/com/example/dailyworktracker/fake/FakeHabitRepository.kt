@@ -30,7 +30,7 @@ class FakeHabitRepository : HabitRepository {
     val archivedIds = mutableListOf<Long>()
     val unarchivedIds = mutableListOf<Long>()
 
-    data class Completion(val habitId: Long, val date: LocalDate)
+    data class Completion(val habitId: Long, val date: LocalDate, val amount: Int? = null)
 
     /** Seeds habits directly, bypassing [addHabit], so tests can start from a known state. */
     fun seed(vararg seeded: Habit) {
@@ -59,7 +59,12 @@ class FakeHabitRepository : HabitRepository {
                 .map { habit ->
                     TodayHabit(
                         habit = habit,
-                        isCompleted = Completion(habit.id, date) in allCompletions,
+                        isCompleted = allCompletions.any { it.habitId == habit.id && it.date == date },
+                        // Only the day being shown carries its amount, matching the real repository.
+                        amount =
+                            allCompletions
+                                .find { it.habitId == habit.id && it.date == date }
+                                ?.amount,
                         currentStreak =
                             StreakCalculator.currentStreak(
                                 completedDates =
@@ -79,9 +84,9 @@ class FakeHabitRepository : HabitRepository {
     override fun observeAllHabits(): Flow<List<Habit>> =
         habits.map { list -> list.sortedWith(compareBy({ it.isArchived }, { it.createdAt })) }
 
-    override fun observeCompletionDates(habitId: Long): Flow<List<LocalDate>> =
+    override fun observeCompletions(habitId: Long): Flow<Map<LocalDate, Int?>> =
         completions.map { all ->
-            all.filter { it.habitId == habitId }.map { it.date }.sortedDescending()
+            all.filter { it.habitId == habitId }.associateBy({ it.date }, { it.amount })
         }
 
     override suspend fun getHabit(habitId: Long): Habit? = habits.value.find { it.id == habitId }
@@ -89,7 +94,7 @@ class FakeHabitRepository : HabitRepository {
     override suspend fun isCompletedOn(
         habitId: Long,
         date: LocalDate,
-    ): Boolean = Completion(habitId, date) in completions.value
+    ): Boolean = completions.value.any { it.habitId == habitId && it.date == date }
 
     override fun observeHabit(habitId: Long): Flow<Habit?> = habits.map { list -> list.find { it.id == habitId } }
 
@@ -123,12 +128,31 @@ class FakeHabitRepository : HabitRepository {
         habitId: Long,
         date: LocalDate,
     ) {
-        val completion = Completion(habitId, date)
+        // Matched on habit and day rather than by value: a completion now carries an amount too,
+        // so set membership would miss a row that differs only in what was logged.
+        val existing = existing(habitId, date)
         completions.value =
-            if (completion in completions.value) {
-                completions.value - completion
+            if (existing != null) {
+                completions.value - existing
             } else {
-                completions.value + completion
+                completions.value + Completion(habitId, date)
             }
     }
+
+    /** Same rule as the real repository: zero clears the day, anything else records it. */
+    override suspend fun setAmount(
+        habitId: Long,
+        date: LocalDate,
+        amount: Int,
+    ) {
+        val existing = existing(habitId, date)
+        val withoutDay = existing?.let { completions.value - it } ?: completions.value
+        completions.value =
+            if (amount <= 0) withoutDay else withoutDay + Completion(habitId, date, amount)
+    }
+
+    private fun existing(
+        habitId: Long,
+        date: LocalDate,
+    ): Completion? = completions.value.find { it.habitId == habitId && it.date == date }
 }

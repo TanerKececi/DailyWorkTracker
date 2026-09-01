@@ -2,6 +2,10 @@ package com.example.dailyworktracker.ui.addedithabit
 
 import androidx.lifecycle.SavedStateHandle
 import com.example.dailyworktracker.R
+import com.example.dailyworktracker.data.model.HabitGoal
+import com.example.dailyworktracker.data.model.HabitUnit
+import com.example.dailyworktracker.data.model.toGoal
+import com.example.dailyworktracker.data.model.withGoal
 import com.example.dailyworktracker.fake.FakeHabitRepository
 import com.example.dailyworktracker.fake.habit
 import com.example.dailyworktracker.testing.MainDispatcherRule
@@ -294,5 +298,71 @@ class AddEditHabitViewModelTest {
             advanceUntilIdle()
 
             assertEquals(LocalTime.of(6, 15), repository.getHabit(7L)?.reminderTime)
+        }
+
+    @Test
+    fun `a new habit is ticked off unless a unit is chosen`() =
+        runTest {
+            val viewModel = viewModel()
+            viewModel.onTitleChanged("Brush teeth")
+
+            viewModel.onSaveClicked()
+            advanceUntilIdle()
+
+            assertEquals(HabitGoal.Once, repository.getHabit(1L)?.toGoal())
+        }
+
+    @Test
+    fun `choosing a unit saves the habit as an amount habit`() =
+        runTest {
+            val viewModel = viewModel()
+            viewModel.onTitleChanged("Read")
+
+            viewModel.onAmountTrackedChanged(true)
+            viewModel.onUnitChanged(HabitUnit.PAGES)
+            viewModel.onSaveClicked()
+            advanceUntilIdle()
+
+            assertEquals(HabitGoal.Amount(HabitUnit.PAGES), repository.getHabit(1L)?.toGoal())
+        }
+
+    @Test
+    fun `turning tracking off returns the habit to a checkbox`() =
+        runTest {
+            val viewModel = viewModel()
+            viewModel.onTitleChanged("Read")
+            viewModel.onAmountTrackedChanged(true)
+            viewModel.onUnitChanged(HabitUnit.PAGES)
+
+            viewModel.onAmountTrackedChanged(false)
+            viewModel.onSaveClicked()
+            advanceUntilIdle()
+
+            assertEquals(HabitGoal.Once, repository.getHabit(1L)?.toGoal())
+        }
+
+    @Test
+    fun `turning tracking off and on again keeps the unit already chosen`() =
+        runTest {
+            val viewModel = viewModel()
+
+            viewModel.onAmountTrackedChanged(true)
+            viewModel.onUnitChanged(HabitUnit.MINUTES)
+            viewModel.onAmountTrackedChanged(false)
+            viewModel.onAmountTrackedChanged(true)
+
+            assertEquals(HabitUnit.MINUTES, viewModel.uiState.value.unit)
+        }
+
+    @Test
+    fun `editing an existing habit loads its unit`() =
+        runTest {
+            repository.seed(habit(id = 3L, title = "Read").withGoal(HabitGoal.Amount(HabitUnit.PAGES)))
+
+            val viewModel = viewModel(habitId = 3L)
+            advanceUntilIdle()
+
+            assertEquals(HabitGoal.Amount(HabitUnit.PAGES), viewModel.uiState.value.goal)
+            assertTrue(viewModel.uiState.value.isAmountTracked)
         }
 }

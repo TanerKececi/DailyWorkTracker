@@ -1,7 +1,9 @@
 package com.example.dailyworktracker.ui.habitlist
 
 import android.os.Bundle
+import android.text.InputType
 import android.view.View
+import android.widget.EditText
 import android.widget.PopupMenu
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -21,6 +23,7 @@ import com.example.dailyworktracker.ui.common.viewBinding
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointBackward
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -42,8 +45,34 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
     private val habitAdapter =
         HabitListAdapter(
             onToggleCompleted = { habitId -> viewModel.onHabitCheckedChanged(habitId) },
+            onAmountClicked = { item -> showAmountDialog(item) },
             onMoreClicked = { item, anchor -> showHabitMenu(item, anchor) },
         )
+
+    /**
+     * Asks how much was done, prefilled with whatever is already recorded.
+     *
+     * Built here rather than as a DialogFragment because it holds nothing worth restoring: the only
+     * state is the number in the field, and a rotation mid-entry losing it is a smaller cost than a
+     * second fragment with its own lifecycle.
+     */
+    private fun showAmountDialog(item: HabitListItemUiModel) {
+        val input =
+            EditText(requireContext()).apply {
+                inputType = InputType.TYPE_CLASS_NUMBER
+                setText(item.amount?.toString().orEmpty())
+                setSelection(text.length)
+            }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.habit_amount_dialog_title, item.title))
+            .setView(input, DIALOG_PADDING, DIALOG_PADDING, DIALOG_PADDING, 0)
+            .setNegativeButton(R.string.add_habit_cancel, null)
+            .setPositiveButton(R.string.add_habit_save) { _, _ ->
+                // A blank field means "nothing done", which clears the day rather than doing nothing.
+                viewModel.onAmountEntered(item.id, input.text.toString().toIntOrNull() ?: 0)
+            }.show()
+    }
 
     override fun onViewCreated(
         view: View,
@@ -213,6 +242,9 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
 
     private companion object {
         const val DATE_PICKER_TAG = "date_picker"
+
+        /** Keeps the dialog's bare EditText off the dialog edges, in pixels. */
+        const val DIALOG_PADDING = 48
     }
 }
 

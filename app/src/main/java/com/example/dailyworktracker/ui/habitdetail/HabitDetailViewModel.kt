@@ -36,13 +36,13 @@ class HabitDetailViewModel
         val uiState: StateFlow<HabitDetailDisplayState> =
             combine(
                 repository.observeHabit(habitId),
-                repository.observeCompletionDates(habitId),
-            ) { habit, completionDates ->
+                repository.observeCompletions(habitId),
+            ) { habit, completions ->
                 // Archiving or deleting the habit elsewhere leaves this screen with nothing to show.
                 if (habit == null) {
                     HabitDetailDisplayState.Missing
                 } else {
-                    HabitDetailDisplayState.Content(buildState(habit, completionDates.toSet()))
+                    HabitDetailDisplayState.Content(buildState(habit, completions.keys))
                 }
             }
                 .catch { emit(HabitDetailDisplayState.Error(it)) }

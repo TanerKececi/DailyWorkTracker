@@ -20,12 +20,25 @@ interface HabitCompletionDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(completion: HabitCompletion)
 
+    /** Overwrites the amount logged for a day that already has a row. */
+    @Query("UPDATE habit_completions SET amount = :amount WHERE habitId = :habitId AND date = :date")
+    suspend fun updateAmount(
+        habitId: Long,
+        date: Long,
+        amount: Int,
+    )
+
     @Delete
     suspend fun delete(completion: HabitCompletion)
 
-    /** Completion dates (epoch days), newest first — the input for streak calculation. */
-    @Query("SELECT date FROM habit_completions WHERE habitId = :habitId ORDER BY date DESC")
-    fun observeCompletionDates(habitId: Long): Flow<List<Long>>
+    /**
+     * Completions for one habit, newest first - the input for streak calculation and the grid.
+     *
+     * Carries the amount so the history grid can label a day with what was actually done. Streaks
+     * still only need which days have a row at all.
+     */
+    @Query("SELECT date, amount FROM habit_completions WHERE habitId = :habitId ORDER BY date DESC")
+    fun observeCompletions(habitId: Long): Flow<List<CompletionOnDate>>
 
     /**
      * Every completion across all habits.
@@ -34,12 +47,19 @@ interface HabitCompletionDao {
      * a per-habit query each time the list changes. Personal habit histories stay small enough that
      * this is cheaper than the alternative.
      */
-    @Query("SELECT habitId, date FROM habit_completions")
+    @Query("SELECT habitId, date, amount FROM habit_completions")
     fun observeAllCompletions(): Flow<List<HabitCompletionDate>>
 }
 
-/** Minimal projection: streaks only need which habit was completed on which day. */
+/** Minimal projection: which habit was completed on which day, and how much was logged. */
 data class HabitCompletionDate(
     val habitId: Long,
     val date: Long,
+    val amount: Int?,
+)
+
+/** One habit's completion: the day, and what was logged on it. */
+data class CompletionOnDate(
+    val date: Long,
+    val amount: Int?,
 )

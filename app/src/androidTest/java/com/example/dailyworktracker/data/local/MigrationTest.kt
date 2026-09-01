@@ -74,8 +74,8 @@ class MigrationTest {
             assertNull("A completion from v1 records no amount", completion?.amount)
 
             // The property the whole feature rests on: a row existing still means "done".
-            val completedDates = database.habitCompletionDao().observeCompletionDates(1L).first()
-            assertEquals(listOf(date.toEpochDay()), completedDates)
+            val completedDates = database.habitCompletionDao().observeCompletions(1L).first()
+            assertEquals(listOf(date.toEpochDay()), completedDates.map { it.date })
         }
 
     /** Opens the migrated file through Room itself, so the entities and the columns must agree. */

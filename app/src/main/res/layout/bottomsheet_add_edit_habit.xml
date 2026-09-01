@@ -5,6 +5,8 @@
 
     <data>
 
+        <import type="com.example.dailyworktracker.data.model.HabitUnit" />
+
         <variable
             name="state"
             type="com.example.dailyworktracker.ui.addedithabit.AddEditHabitScreenState" />
@@ -118,6 +120,77 @@
                 app:visibleIf="@{state.scheduleError != null}"
                 tools:text="@string/add_habit_error_no_days"
                 tools:visibility="visible" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="20dp"
+                android:background="?attr/colorOutlineVariant" />
+
+            <!--
+              Amount tracking. The switch chooses the kind of habit; the unit picker only appears
+              once it is on, because a unit means nothing for a habit that is simply ticked off.
+            -->
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchTrackAmount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:checked="@{state.amountTracked}"
+                android:text="@string/add_habit_track_amount" />
+
+            <TextView
+                android:id="@+id/labelUnit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/add_habit_unit_label"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                app:visibleIf="@{state.amountTracked}" />
+
+            <!--
+              onClick rather than onCheckedChange: the checked state is bound from the goal, and a
+              change listener would fire while that binding is applied and echo straight back.
+            -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupUnits"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:singleSelection="true"
+                app:visibleIf="@{state.amountTracked}">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipUnitTimes"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:checked="@{state.unit == HabitUnit.TIMES}"
+                    android:onClick="@{() -> viewModel.onUnitChanged(HabitUnit.TIMES)}"
+                    android:text="@string/unit_times" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipUnitPages"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:checked="@{state.unit == HabitUnit.PAGES}"
+                    android:onClick="@{() -> viewModel.onUnitChanged(HabitUnit.PAGES)}"
+                    android:text="@string/unit_pages" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipUnitMinutes"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:checked="@{state.unit == HabitUnit.MINUTES}"
+                    android:onClick="@{() -> viewModel.onUnitChanged(HabitUnit.MINUTES)}"
+                    android:text="@string/unit_minutes" />
+
+            </com.google.android.material.chip.ChipGroup>
 
             <View
                 android:layout_width="match_parent"

@@ -100,6 +100,12 @@
     <string name="add_habit_cancel">Cancel</string>
     <string name="add_habit_error_empty_title">Enter a habit name</string>
     <string name="add_habit_error_no_days">Pick at least one day</string>
+    <string name="add_habit_track_amount">Track an amount</string>
+    <string name="add_habit_unit_label">Measured in</string>
+    <string name="unit_times">Times</string>
+    <string name="unit_pages">Pages</string>
+    <string name="unit_minutes">Minutes</string>
+
     <string name="add_habit_reminder_label">Remind me</string>
     <string name="add_habit_reminder_picker_title">Reminder time</string>
     <string name="add_habit_reminder_time_description">Reminder time, %1$s</string>

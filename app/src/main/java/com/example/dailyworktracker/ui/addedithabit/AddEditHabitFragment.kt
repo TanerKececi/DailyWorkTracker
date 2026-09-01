@@ -111,6 +111,11 @@ class AddEditHabitFragment : BottomSheetDialogFragment() {
             switchEveryDay.setOnCheckedChangeListener { _, isChecked ->
                 if (!isBindingState) this@AddEditHabitFragment.viewModel.onEveryDayToggled(isChecked)
             }
+            switchTrackAmount.setOnCheckedChangeListener { _, isChecked ->
+                if (!isBindingState) {
+                    this@AddEditHabitFragment.viewModel.onAmountTrackedChanged(isChecked)
+                }
+            }
             switchReminder.setOnCheckedChangeListener { _, isChecked ->
                 if (isBindingState) return@setOnCheckedChangeListener
                 this@AddEditHabitFragment.viewModel.onReminderEnabledChanged(isChecked)

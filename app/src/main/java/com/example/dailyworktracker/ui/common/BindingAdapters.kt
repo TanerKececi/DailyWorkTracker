@@ -2,12 +2,14 @@ package com.example.dailyworktracker.ui.common
 
 import android.view.View
 import android.widget.TextView
+import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.appcompat.widget.Toolbar
 import androidx.databinding.BindingAdapter
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.dailyworktracker.R
+import com.example.dailyworktracker.data.model.HabitUnit
 import com.google.android.material.textfield.TextInputLayout
 import java.time.LocalDate
 import java.time.LocalTime
@@ -151,3 +153,31 @@ fun TextView.setReminderTimeText(time: LocalTime) {
     text = formatted
     contentDescription = context.getString(R.string.add_habit_reminder_time_description, formatted)
 }
+
+/**
+ * Labels the amount logged for a day, e.g. "12 pages".
+ *
+ * A null amount means nothing has been recorded yet and the button invites a first entry, rather
+ * than reading as a zero the user did not enter. Each unit has its own plural so the singular is
+ * right in every language - "1 page", not "1 pages".
+ */
+@BindingAdapter(value = ["loggedAmount", "loggedUnit"], requireAll = true)
+fun TextView.setLoggedAmount(
+    amount: Int?,
+    unit: HabitUnit?,
+) {
+    text =
+        if (amount == null || unit == null) {
+            context.getString(R.string.habit_amount_none)
+        } else {
+            resources.getQuantityString(unit.pluralRes(), amount, amount)
+        }
+}
+
+@PluralsRes
+private fun HabitUnit.pluralRes(): Int =
+    when (this) {
+        HabitUnit.TIMES -> R.plurals.habit_amount_times
+        HabitUnit.PAGES -> R.plurals.habit_amount_pages
+        HabitUnit.MINUTES -> R.plurals.habit_amount_minutes
+    }

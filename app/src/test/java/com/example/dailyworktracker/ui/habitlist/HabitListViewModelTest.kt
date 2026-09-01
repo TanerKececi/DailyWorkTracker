@@ -1,6 +1,9 @@
 package com.example.dailyworktracker.ui.habitlist
 
 import app.cash.turbine.test
+import com.example.dailyworktracker.data.model.HabitGoal
+import com.example.dailyworktracker.data.model.HabitUnit
+import com.example.dailyworktracker.data.model.withGoal
 import com.example.dailyworktracker.fake.FakeDateProvider
 import com.example.dailyworktracker.fake.FakeHabitRepository
 import com.example.dailyworktracker.fake.habit
@@ -13,6 +16,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -329,6 +333,56 @@ class HabitListViewModelTest {
             runCurrent()
 
             assertEquals(monday.plusDays(1), viewModel.uiState.value.today)
+        }
+
+    /**
+     * The same rule as ticking a box: the entry lands on the day being viewed, not on today.
+     *
+     * This is the failure the whole backfill feature exists to avoid, and an amount habit is a
+     * second write path that could get it wrong independently.
+     */
+    @Test
+    fun `logging an amount on a past day writes to that day`() =
+        runTest {
+            repository.seed(oldHabit(id = 1L, title = "Read").withGoal(HabitGoal.Amount(HabitUnit.PAGES)))
+            val viewModel = viewModel()
+            val yesterday = monday.minusDays(1)
+
+            viewModel.uiState.test {
+                assertEquals(HabitListDisplayState.Loading, awaitItem().displayState)
+                awaitItem()
+
+                viewModel.onPreviousDayClicked()
+                awaitItem()
+                viewModel.onAmountEntered(habitId = 1L, amount = 12)
+
+                val row = (awaitItem().displayState as Content).habits.single()
+                assertEquals(12, row.amount)
+                assertTrue(row.isCompleted)
+            }
+
+            assertEquals(listOf(yesterday), repository.completionsFor(habitId = 1L))
+        }
+
+    @Test
+    fun `logging zero clears the day`() =
+        runTest {
+            repository.seed(oldHabit(id = 1L, title = "Read").withGoal(HabitGoal.Amount(HabitUnit.PAGES)))
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                assertEquals(HabitListDisplayState.Loading, awaitItem().displayState)
+                awaitItem()
+
+                viewModel.onAmountEntered(habitId = 1L, amount = 12)
+                assertTrue((awaitItem().displayState as Content).habits.single().isCompleted)
+
+                viewModel.onAmountEntered(habitId = 1L, amount = 0)
+
+                val row = (awaitItem().displayState as Content).habits.single()
+                assertFalse(row.isCompleted)
+                assertNull(row.amount)
+            }
         }
 
     @Test

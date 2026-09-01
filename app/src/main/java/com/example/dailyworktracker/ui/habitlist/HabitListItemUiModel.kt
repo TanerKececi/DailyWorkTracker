@@ -1,5 +1,8 @@
 package com.example.dailyworktracker.ui.habitlist
 
+import com.example.dailyworktracker.data.model.HabitGoal
+import com.example.dailyworktracker.data.model.HabitUnit
+
 /**
  * One row of the habit list, already reduced to what the view needs to draw.
  *
@@ -17,4 +20,13 @@ data class HabitListItemUiModel(
     val scheduleDaysBitmask: Int,
     /** Consecutive scheduled days kept; 0 means there is no run worth showing yet. */
     val currentStreak: Int,
-)
+    /** How this habit is recorded: ticked off, or logged as a number. */
+    val goal: HabitGoal,
+    /** What was logged for the day being shown; null when nothing has been logged yet. */
+    val amount: Int?,
+) {
+    val isAmountTracked: Boolean get() = goal is HabitGoal.Amount
+
+    /** Null for a tick-it-off habit, which is how the layout knows to draw a checkbox instead. */
+    val unit: HabitUnit? get() = (goal as? HabitGoal.Amount)?.unit
+}

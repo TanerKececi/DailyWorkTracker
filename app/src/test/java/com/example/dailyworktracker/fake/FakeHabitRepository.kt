@@ -60,6 +60,11 @@ class FakeHabitRepository : HabitRepository {
                     TodayHabit(
                         habit = habit,
                         isCompleted = allCompletions.any { it.habitId == habit.id && it.date == date },
+                        // Only the day being shown carries its amount, matching the real repository.
+                        amount =
+                            allCompletions
+                                .find { it.habitId == habit.id && it.date == date }
+                                ?.amount,
                         currentStreak =
                             StreakCalculator.currentStreak(
                                 completedDates =

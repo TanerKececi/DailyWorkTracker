@@ -79,6 +79,22 @@
     <string name="all_habits_schedule_with_reminder">%1$s · ⏰ %2$s</string>
 
     <!-- Streaks -->
+    <plurals name="habit_amount_times">
+        <item quantity="one">%d time</item>
+        <item quantity="other">%d times</item>
+    </plurals>
+    <plurals name="habit_amount_pages">
+        <item quantity="one">%d page</item>
+        <item quantity="other">%d pages</item>
+    </plurals>
+    <plurals name="habit_amount_minutes">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <string name="habit_amount_none">Log</string>
+    <string name="habit_amount_dialog_title">How much for %1$s?</string>
+    <string name="habit_amount_description">Log an amount for %1$s</string>
+
     <plurals name="habit_streak">
         <item quantity="one">🔥 %d day streak</item>
         <item quantity="other">🔥 %d day streak</item>

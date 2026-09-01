@@ -78,7 +78,10 @@
 
     <!-- Streaks -->
     <string name="habit_detail_total_amount">%1$s in total</string>
-    <string name="habit_detail_chart_title">Last 30 days</string>
+    <string name="habit_detail_chart_title">Charts</string>
+    <string name="habit_detail_range_week">Week</string>
+    <string name="habit_detail_range_month">Month</string>
+    <string name="habit_detail_range_year">Year</string>
 
     <plurals name="habit_amount_times">
         <item quantity="one">%d time</item>

@@ -24,13 +24,15 @@ data class HabitDetailUiState(
     val unit: HabitUnit? = null,
     /** Everything ever logged, added up. Zero for a ticked-off habit. */
     val totalAmount: Int = 0,
+    /** Which range the chart is showing, so the toggle can highlight it. */
+    val chartRange: ChartRange = ChartRange.WEEK,
     /**
-     * The last few days, for the chart.
+     * The bars themselves.
      *
-     * Calendar days rather than scheduled ones: a gap in the bars is itself information, and
-     * skipping unscheduled days would make the dates along the bottom jump.
+     * Every period in range appears, including ones with nothing logged: a gap is itself
+     * information, and dropping empty periods would make the labels along the bottom jump.
      */
-    val recentAmounts: List<DailyAmount> = emptyList(),
+    val chartBars: List<ChartBar> = emptyList(),
 ) {
     /** Whether the amount chart and the amount total belong on screen at all. */
     val isAmountTracked: Boolean get() = unit != null
@@ -46,8 +48,27 @@ data class HabitDetailUiState(
     }
 }
 
-/** One bar of the amount chart: a day, and what was logged on it. */
-data class DailyAmount(
-    val date: LocalDate,
+/**
+ * How far back the amount chart looks.
+ *
+ * A year is aggregated by month rather than drawn as 365 bars: at one bar a day the columns would
+ * be narrower than their own labels, and the question a year answers is about months anyway.
+ */
+enum class ChartRange(val days: Long) {
+    WEEK(7),
+    MONTH(30),
+
+    /** Twelve months, one bar each; [days] is unused for this one. */
+    YEAR(0),
+}
+
+/**
+ * One bar of the amount chart.
+ *
+ * [start] is the day the bar covers, or the first of the month for a yearly bar - which is what
+ * lets the view label it without being told which range produced it.
+ */
+data class ChartBar(
+    val start: LocalDate,
     val amount: Int,
 )

@@ -84,22 +84,60 @@ class HabitDetailViewModelTest {
         }
 
     @Test
-    fun `the chart covers a fixed week, including days with nothing logged`() =
+    fun `the chart covers a week by default, including days with nothing logged`() =
         runTest {
             repository.seed(habit(id = 1L).withGoal(HabitGoal.Amount(HabitUnit.PAGES)))
             repository.setAmount(habitId = 1L, date = monday, amount = 12)
             repository.setAmount(habitId = 1L, date = monday.minusDays(2), amount = 30)
 
-            val bars = awaitDetail().recentAmounts
+            val state = awaitDetail()
+            val bars = state.chartBars
 
-            assertEquals(HabitDetailViewModel.CHART_DAYS, bars.size)
+            assertEquals(ChartRange.WEEK, state.chartRange)
+            assertEquals(ChartRange.WEEK.days.toInt(), bars.size)
             // Oldest first, ending today, so the bars read left to right.
-            assertEquals(monday.minusDays(HabitDetailViewModel.CHART_DAYS - 1L), bars.first().date)
-            assertEquals(monday, bars.last().date)
+            assertEquals(monday.minusDays(ChartRange.WEEK.days - 1), bars.first().start)
+            assertEquals(monday, bars.last().start)
             // A day with no record is a zero bar rather than a missing column.
             assertEquals(12, bars.last().amount)
-            assertEquals(30, bars.first { it.date == monday.minusDays(2) }.amount)
-            assertEquals(0, bars.first { it.date == monday.minusDays(1) }.amount)
+            assertEquals(30, bars.first { it.start == monday.minusDays(2) }.amount)
+            assertEquals(0, bars.first { it.start == monday.minusDays(1) }.amount)
+        }
+
+    /**
+     * The yearly view is the only range that aggregates, so it is the only one whose arithmetic
+     * can be wrong: a month's bar is everything logged in that month, not a sample of it.
+     */
+    @Test
+    fun `the yearly range sums each month into one bar`() =
+        runTest {
+            repository.seed(habit(id = 1L).withGoal(HabitGoal.Amount(HabitUnit.PAGES)))
+            repository.setAmount(habitId = 1L, date = monday, amount = 12)
+            repository.setAmount(habitId = 1L, date = monday.minusDays(1), amount = 30)
+            // A month back, so it lands in its own bar rather than joining the two above.
+            repository.setAmount(habitId = 1L, date = monday.minusMonths(1), amount = 7)
+
+            val viewModel = viewModel()
+            lateinit var state: HabitDetailUiState
+            viewModel.uiState.test {
+                assertEquals(HabitDetailDisplayState.Loading, awaitItem())
+                awaitItem()
+
+                viewModel.onChartRangeSelected(ChartRange.YEAR)
+
+                state = (awaitItem() as Content).habit
+            }
+
+            assertEquals(ChartRange.YEAR, state.chartRange)
+            assertEquals(HabitDetailViewModel.MONTHS_SHOWN.toInt(), state.chartBars.size)
+            // Both of this month's entries land in the last bar; the older one in its own.
+            assertEquals(42, state.chartBars.last().amount)
+            assertEquals(
+                7,
+                state.chartBars.first { it.start.month == monday.minusMonths(1).month }.amount,
+            )
+            // Every bar starts on the first of its month, which is what the label reads from.
+            assertTrue(state.chartBars.all { it.start.dayOfMonth == 1 })
         }
 
     @Test

@@ -17,7 +17,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.data.model.HabitUnit
 import com.example.dailyworktracker.databinding.ItemAmountBarBinding
-import com.example.dailyworktracker.ui.habitdetail.DailyAmount
+import com.example.dailyworktracker.ui.habitdetail.ChartBar
+import com.example.dailyworktracker.ui.habitdetail.ChartRange
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.textfield.TextInputLayout
 import java.time.LocalDate
@@ -198,8 +199,11 @@ private fun HabitUnit.pluralRes(): Int =
  * and one logged in minutes both fill the space. The value sits above each bar, which is what
  * makes an axis unnecessary at this size.
  */
-@BindingAdapter("amountBars")
-fun LinearLayout.setAmountBars(bars: List<DailyAmount>?) {
+@BindingAdapter(value = ["amountBars", "barRange"], requireAll = true)
+fun LinearLayout.setAmountBars(
+    bars: List<ChartBar>?,
+    range: ChartRange?,
+) {
     removeAllViews()
     val days = bars.orEmpty()
     if (days.isEmpty()) return
@@ -208,11 +212,10 @@ fun LinearLayout.setAmountBars(bars: List<DailyAmount>?) {
     val maxAmount = days.maxOf { it.amount }
     val fullHeight = resources.getDimensionPixelSize(R.dimen.amount_chart_height)
     val locale = Locale.getDefault()
-    val dateFormat =
-        DateTimeFormatter.ofPattern(
-            DateFormat.getBestDateTimePattern(locale, BAR_DATE_SKELETON),
-            locale,
-        )
+    // A yearly bar covers a month, so it is labelled with the month rather than a date.
+    val skeleton = if (range == ChartRange.YEAR) BAR_MONTH_SKELETON else BAR_DATE_SKELETON
+    val labelFormat =
+        DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
     // The bar drawable is shared with the heatmap, which tints it at bind time rather than
     // carrying a colour of its own. Untinted it draws as an all but invisible outline.
     val barTint =
@@ -231,7 +234,7 @@ fun LinearLayout.setAmountBars(bars: List<DailyAmount>?) {
         bar.spaceBar.updateLayoutParams { height = fullHeight - barHeight }
 
         bar.textBarValue.text = if (day.amount == 0) "" else day.amount.toString()
-        bar.textBarDate.text = dateFormat.format(day.date)
+        bar.textBarDate.text = labelFormat.format(day.start)
         addView(bar.root)
     }
 
@@ -250,6 +253,9 @@ fun LinearLayout.setAmountBars(bars: List<DailyAmount>?) {
  * never spans one and the columns are narrow.
  */
 private const val BAR_DATE_SKELETON = "Md"
+
+/** Just the month, for the yearly view. */
+private const val BAR_MONTH_SKELETON = "MMM"
 
 /**
  * The running total under the grid, for a habit logged as a number.

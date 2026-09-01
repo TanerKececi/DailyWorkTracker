@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dailyworktracker.data.local.entity.Habit
+import com.example.dailyworktracker.data.model.HabitGoal
+import com.example.dailyworktracker.data.model.toGoal
 import com.example.dailyworktracker.data.repository.HabitRepository
 import com.example.dailyworktracker.util.DateProvider
 import com.example.dailyworktracker.util.HabitStatistics
@@ -78,8 +80,26 @@ class HabitDetailViewModel
                     ),
                 completedCount = completed.size,
                 heatmap = buildHeatmap(habit, completions, createdOn, today),
+                unit = (habit.toGoal() as? HabitGoal.Amount)?.unit,
+                totalAmount = completions.values.sumOf { it ?: 0 },
+                recentAmounts = recentAmounts(completions, today),
             )
         }
+
+        /**
+         * The last [CHART_DAYS] calendar days, most recent last.
+         *
+         * A day with no record contributes a zero-height bar rather than being left out, so the
+         * dates along the bottom stay evenly spaced and a gap reads as a gap.
+         */
+        private fun recentAmounts(
+            completions: Map<LocalDate, Int?>,
+            today: LocalDate,
+        ): List<DailyAmount> =
+            (CHART_DAYS - 1 downTo 0).map { back ->
+                val date = today.minusDays(back.toLong())
+                DailyAmount(date = date, amount = completions[date] ?: 0)
+            }
 
         /**
          * Whole weeks ending on the week containing today, each row being a month gutter followed by
@@ -128,7 +148,6 @@ class HabitDetailViewModel
                             date = date,
                             status = statusOf(habit, completed, date, createdOn, today),
                             isAlternateMonth = isAlternate,
-                            amount = completions[date],
                         )
                 }
                 monday = monday.plusWeeks(1)
@@ -157,6 +176,9 @@ class HabitDetailViewModel
         companion object {
             const val ARG_HABIT_ID = "habitId"
             const val WEEKS_SHOWN = 12
+
+            /** A week of bars: enough to see a pattern, few enough to read without scrolling. */
+            const val CHART_DAYS = 7
             const val DAYS_PER_WEEK = 7
 
             /** A month gutter plus its seven days; the grid is laid out in this many columns. */

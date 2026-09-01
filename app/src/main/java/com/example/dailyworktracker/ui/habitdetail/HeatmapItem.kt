@@ -51,12 +51,5 @@ sealed interface HeatmapItem {
         val date: LocalDate,
         val status: DayStatus,
         override val isAlternateMonth: Boolean,
-        /**
-         * What was logged that day, for a habit recorded as a number.
-         *
-         * Null for a tick-it-off habit and for any day with nothing recorded, which is how the
-         * cell knows to fall back to the day of the month.
-         */
-        val amount: Int? = null,
     ) : HeatmapItem
 }

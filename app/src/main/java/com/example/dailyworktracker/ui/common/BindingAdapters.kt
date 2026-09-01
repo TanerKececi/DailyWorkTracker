@@ -252,26 +252,22 @@ fun LinearLayout.setAmountBars(bars: List<DailyAmount>?) {
 private const val BAR_DATE_SKELETON = "Md"
 
 /**
- * The running total under the grid.
+ * The running total under the grid, for a habit logged as a number.
  *
- * An amount habit gets both numbers - "42 days · 512 pages" - because the day count is what
- * streaks and the completion rate are built on, while the total is what the habit is actually
- * about. A ticked-off habit has only days to report.
+ * Days completed used to share this line, but it is a Records tile now, and one number in two
+ * places is one number that can disagree with itself. The line is hidden entirely for a
+ * ticked-off habit, which has nothing to total.
  */
-@BindingAdapter(value = ["totalDays", "totalAmount", "totalUnit"], requireAll = true)
-fun TextView.setTotals(
-    days: Int,
+@BindingAdapter(value = ["totalAmount", "totalUnit"], requireAll = true)
+fun TextView.setTotalAmount(
     amount: Int,
     unit: HabitUnit?,
 ) {
     text =
-        if (unit == null) {
-            resources.getQuantityString(R.plurals.habit_detail_total_completions, days, days)
-        } else {
+        unit?.let {
             context.getString(
-                R.string.habit_detail_total_combined,
-                resources.getQuantityString(R.plurals.habit_detail_days, days, days),
-                resources.getQuantityString(unit.pluralRes(), amount, amount),
+                R.string.habit_detail_total_amount,
+                resources.getQuantityString(it.pluralRes(), amount, amount),
             )
         }
 }

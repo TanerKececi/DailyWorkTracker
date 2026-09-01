@@ -91,11 +91,21 @@
 
                 </LinearLayout>
 
-                <!-- Stat tiles -->
+                <!--
+                  Records: four tiles in two rows. Three across was already tight, and the fourth
+                  would not have fitted at all without shrinking the numbers past reading size.
+                -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/habit_detail_records_title"
+                    android:textAppearance="?attr/textAppearanceTitleSmall" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
+                    android:layout_marginTop="12dp"
                     android:baselineAligned="false"
                     android:orientation="horizontal">
 
@@ -117,6 +127,24 @@
                         android:layout_weight="1"
                         app:label="@{@string/habit_detail_longest_streak}"
                         app:value="@{@string/habit_detail_days_value(state.habit.longestStreak)}" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
+
+                    <include
+                        android:id="@+id/tileTotalDone"
+                        layout="@layout/item_stat_tile"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:label="@{@string/habit_detail_total_done}"
+                        app:value="@{@string/habit_detail_days_value(state.habit.completedCount)}" />
 
                     <include
                         android:id="@+id/tileCompletionRate"
@@ -172,9 +200,9 @@
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     app:totalAmount="@{state.habit.totalAmount}"
-                    app:totalDays="@{state.habit.completedCount}"
                     app:totalUnit="@{state.habit.unit}"
-                    tools:text="42 days · 512 pages in total" />
+                    app:visibleIf="@{state.habit.amountTracked}"
+                    tools:text="943 pages in total" />
 
                 <!--
                   The grid answers "did I do it"; this answers "how much". Only a habit logged as

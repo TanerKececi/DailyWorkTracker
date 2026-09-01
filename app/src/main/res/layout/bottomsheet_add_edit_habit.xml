@@ -80,7 +80,15 @@
                         android:imeOptions="actionDone"
                         android:inputType="textCapSentences"
                         android:maxLines="1"
-                        android:text="@{state.title}" />
+                        android:text="@{state.title}">
+
+                        <!--
+                          The emoji box comes first in the layout and would otherwise take focus,
+                          so an opened sheet sends the first thing typed into the icon field.
+                        -->
+                        <requestFocus />
+
+                    </com.google.android.material.textfield.TextInputEditText>
 
                 </com.google.android.material.textfield.TextInputLayout>
 

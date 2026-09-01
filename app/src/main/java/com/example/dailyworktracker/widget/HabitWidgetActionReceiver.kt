@@ -3,6 +3,10 @@ package com.example.dailyworktracker.widget
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.example.dailyworktracker.BuildConfig
+import com.example.dailyworktracker.MainActivity
+import com.example.dailyworktracker.data.model.HabitGoal
+import com.example.dailyworktracker.data.model.toGoal
 import com.example.dailyworktracker.data.repository.HabitRepository
 import com.example.dailyworktracker.util.DateProvider
 import dagger.hilt.EntryPoint
@@ -54,17 +58,36 @@ class HabitWidgetActionReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
-                // Always today: the widget only ever shows today, and the past is the app's job.
-                dependencies.habitRepository().toggleCompletion(
-                    habitId = habitId,
-                    date = dependencies.dateProvider().today(),
-                )
+                val repository = dependencies.habitRepository()
+                if (repository.getHabit(habitId)?.toGoal() is HabitGoal.Amount) {
+                    // A number cannot be entered on the home screen, and ticking the habit off
+                    // would record a completion with no amount - done, but with nothing logged.
+                    // Hand the tap to the app instead.
+                    context.startActivity(openApp())
+                } else {
+                    // Always today: the widget only ever shows today, and the past is the app's job.
+                    repository.toggleCompletion(
+                        habitId = habitId,
+                        date = dependencies.dateProvider().today(),
+                    )
+                }
             } finally {
                 // The write goes through the repository, which is what redraws the widget.
                 pendingResult.finish()
             }
         }
     }
+
+    /**
+     * NEW_TASK because a receiver has no task of its own to start the activity in.
+     *
+     * The launcher sending the widget's PendingIntent is what permits this start at all; the app
+     * has no visible component of its own at this point.
+     */
+    private fun openApp() =
+        Intent(Intent.ACTION_MAIN)
+            .setClassName(BuildConfig.APPLICATION_ID, MainActivity::class.java.name)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     companion object {
         const val ACTION_TOGGLE = "com.example.dailyworktracker.widget.action.TOGGLE"

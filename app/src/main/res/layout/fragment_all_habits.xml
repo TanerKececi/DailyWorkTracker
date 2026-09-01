@@ -3,6 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <data>
+
+        <variable
+            name="state"
+            type="com.example.dailyworktracker.ui.allhabits.AllHabitsDisplayState" />
+
+    </data>
+
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -31,6 +39,8 @@
             android:paddingBottom="16dp"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            app:items="@{state.habits}"
+            app:visibleIf="@{state.content}"
             tools:itemCount="3"
             tools:listitem="@layout/item_all_habit" />
 
@@ -40,7 +50,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:visibility="gone" />
+            app:visibleIf="@{state.loading}" />
 
         <LinearLayout
             android:id="@+id/groupEmpty"
@@ -50,14 +60,14 @@
             android:gravity="center"
             android:orientation="vertical"
             android:paddingHorizontal="48dp"
-            android:visibility="gone">
+            app:visibleIf="@{state.empty}">
 
             <TextView
                 android:id="@+id/textEmptyTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                tools:text="@string/habit_list_empty_title" />
+                android:text="@string/habit_list_empty_title"
+                android:textAppearance="?attr/textAppearanceHeadlineSmall" />
 
             <TextView
                 android:id="@+id/textEmptyMessage"
@@ -65,9 +75,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:gravity="center"
+                android:text="@string/habit_list_empty_message"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                tools:text="@string/habit_list_empty_message" />
+                android:textColor="?attr/colorOnSurfaceVariant" />
 
         </LinearLayout>
 
@@ -79,7 +89,7 @@
             android:gravity="center"
             android:orientation="vertical"
             android:paddingHorizontal="48dp"
-            android:visibility="gone">
+            app:visibleIf="@{state.error}">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -93,6 +103,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:gravity="center"
+                android:text="@{state.errorMessage}"
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="?attr/colorOnSurfaceVariant" />
 

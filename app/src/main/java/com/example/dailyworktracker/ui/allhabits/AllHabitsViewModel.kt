@@ -2,10 +2,8 @@ package com.example.dailyworktracker.ui.allhabits
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.dailyworktracker.R
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.repository.HabitRepository
-import com.example.dailyworktracker.ui.common.UiState
 import com.example.dailyworktracker.util.reminderTime
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,23 +26,20 @@ class AllHabitsViewModel
     constructor(
         private val repository: HabitRepository,
     ) : ViewModel() {
-        val uiState: StateFlow<UiState<List<AllHabitItemUiModel>>> =
+        val uiState: StateFlow<AllHabitsDisplayState> =
             repository.observeAllHabits()
                 .map { habits ->
                     if (habits.isEmpty()) {
-                        UiState.Empty(
-                            titleRes = R.string.habit_list_empty_title,
-                            messageRes = R.string.habit_list_empty_message,
-                        )
+                        AllHabitsDisplayState.Empty
                     } else {
-                        UiState.Success(habits.map(Habit::toUiModel))
+                        AllHabitsDisplayState.Content(habits.map(Habit::toUiModel))
                     }
                 }
-                .catch { emit(UiState.Error(it)) }
+                .catch { emit(AllHabitsDisplayState.Error(it)) }
                 .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-                    initialValue = UiState.Loading,
+                    initialValue = AllHabitsDisplayState.Loading,
                 )
 
         fun onArchiveToggled(

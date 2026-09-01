@@ -3,15 +3,15 @@ package com.example.dailyworktracker.ui.allhabits
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.ItemAllHabitBinding
-import com.example.dailyworktracker.ui.common.ScheduleFormatter
-import com.example.dailyworktracker.ui.common.TimeFormatter
 
+/**
+ * Rows are drawn by `item_all_habit.xml` from the bound item; the only thing left here is the
+ * overflow click, which needs the clicked view as a popup anchor and so cannot live in the layout.
+ */
 class AllHabitsAdapter(
     private val onMoreClicked: (item: AllHabitItemUiModel, anchor: View) -> Unit,
 ) : ListAdapter<AllHabitItemUiModel, AllHabitsAdapter.AllHabitViewHolder>(DIFF_CALLBACK) {
@@ -35,36 +35,15 @@ class AllHabitsAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: AllHabitItemUiModel) =
             with(binding) {
-                val context = root.context
-                textEmoji.text = item.emoji
-                textTitle.text = item.title
-                textSchedule.text = scheduleLine(item)
-                chipArchived.isVisible = item.isArchived
-
-                // Dim archived habits so the distinction reads at a glance, not just from the badge.
-                root.alpha = if (item.isArchived) ARCHIVED_ALPHA else 1f
-
-                buttonMore.contentDescription =
-                    context.getString(R.string.habit_list_more_options, item.title)
+                this.item = item
                 buttonMore.setOnClickListener { onMoreClicked(item, it) }
+                // Data binding defers to the next frame by default, which shows the recycled row's
+                // old contents for a frame while scrolling. Binding now keeps rows from flickering.
+                executePendingBindings()
             }
-
-        /** The reminder rides on the schedule line so a row stays two lines tall. */
-        private fun scheduleLine(item: AllHabitItemUiModel): String {
-            val context = binding.root.context
-            val schedule = ScheduleFormatter.format(context, item.scheduleDaysBitmask)
-            val reminder = item.reminderTime ?: return schedule
-            return context.getString(
-                R.string.all_habits_schedule_with_reminder,
-                schedule,
-                TimeFormatter.format(context, reminder),
-            )
-        }
     }
 
     private companion object {
-        const val ARCHIVED_ALPHA = 0.55f
-
         val DIFF_CALLBACK =
             object : DiffUtil.ItemCallback<AllHabitItemUiModel>() {
                 override fun areItemsTheSame(

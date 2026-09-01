@@ -5,7 +5,6 @@ import android.view.View
 import android.widget.PopupMenu
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -15,7 +14,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.FragmentAllHabitsBinding
-import com.example.dailyworktracker.ui.common.UiState
 import com.example.dailyworktracker.ui.common.viewBinding
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -62,34 +60,19 @@ class AllHabitsFragment : Fragment(R.layout.fragment_all_habits) {
         }
     }
 
+    /**
+     * The layout renders itself from the state; this only hands each new value over.
+     *
+     * The state is assigned rather than bound as a StateFlow because databinding-ktx, which would
+     * observe the flow directly, is disabled - see the note in the module's build file.
+     */
     private fun observeUiState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect(::render)
+                viewModel.uiState.collect { binding.state = it }
             }
         }
     }
-
-    private fun render(state: UiState<List<AllHabitItemUiModel>>) =
-        with(binding) {
-            progressLoading.isVisible = state is UiState.Loading
-            recyclerHabits.isVisible = state is UiState.Success
-            groupEmpty.isVisible = state is UiState.Empty
-            groupError.isVisible = state is UiState.Error
-
-            when (state) {
-                is UiState.Success -> habitAdapter.submitList(state.data)
-
-                is UiState.Empty -> {
-                    habitAdapter.submitList(emptyList())
-                    textEmptyTitle.setText(state.titleRes)
-                    textEmptyMessage.setText(state.messageRes)
-                }
-
-                is UiState.Error -> textErrorMessage.text = state.throwable.localizedMessage
-                UiState.Loading -> habitAdapter.submitList(emptyList())
-            }
-        }
 
     private fun showHabitMenu(
         item: AllHabitItemUiModel,

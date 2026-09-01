@@ -5,6 +5,8 @@
 
     <data>
 
+        <import type="com.example.dailyworktracker.data.model.TimeOfDay" />
+
         <variable
             name="state"
             type="com.example.dailyworktracker.ui.habitlist.HabitListScreenState" />
@@ -91,6 +93,72 @@
                     tools:visibility="visible" />
 
             </LinearLayout>
+
+            <!--
+              Part-of-day filter. Sits in the AppBarLayout with the date bar for the same reason:
+              it must stay reachable when the filter itself is what emptied the list.
+
+              onClick rather than a checked-change listener, because the checked state is bound
+              from the filter and a change listener would echo that binding straight back.
+            -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="12dp"
+                android:paddingBottom="8dp"
+                android:scrollbars="none">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupTimeFilter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:selectionRequired="true"
+                    app:singleLine="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipTimeAll"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:checked="@{state.timeFilter == null}"
+                        android:onClick="@{() -> viewModel.onAllTimesSelected()}"
+                        android:text="@string/time_filter_all" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipTimeMorning"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:checked="@{state.timeFilter == TimeOfDay.MORNING}"
+                        android:onClick="@{() -> viewModel.onTimeFilterSelected(TimeOfDay.MORNING)}"
+                        android:text="@string/time_of_day_morning" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipTimeAfternoon"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:checked="@{state.timeFilter == TimeOfDay.AFTERNOON}"
+                        android:onClick="@{() -> viewModel.onTimeFilterSelected(TimeOfDay.AFTERNOON)}"
+                        android:text="@string/time_of_day_afternoon" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipTimeEvening"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:checked="@{state.timeFilter == TimeOfDay.EVENING}"
+                        android:onClick="@{() -> viewModel.onTimeFilterSelected(TimeOfDay.EVENING)}"
+                        android:text="@string/time_of_day_evening" />
+
+                </com.google.android.material.chip.ChipGroup>
+
+            </HorizontalScrollView>
 
         </com.google.android.material.appbar.AppBarLayout>
 

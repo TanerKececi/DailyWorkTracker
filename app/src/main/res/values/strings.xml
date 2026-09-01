@@ -5,6 +5,15 @@
     <string name="habit_list_title">Today</string>
     <string name="habit_list_empty_title">No habits yet</string>
     <string name="habit_list_empty_message">Add a habit to start tracking your daily routine.</string>
+    <string name="habit_list_nothing_at_time_title">Nothing right now</string>
+    <string name="habit_list_nothing_at_time_message">No habits for this part of the day. Try All day.</string>
+    <string name="time_filter_all">All day</string>
+    <string name="time_of_day_morning">Morning</string>
+    <string name="time_of_day_afternoon">Afternoon</string>
+    <string name="time_of_day_evening">Evening</string>
+    <string name="time_of_day_any">Any time</string>
+    <string name="add_habit_time_of_day_label">Part of the day</string>
+
     <string name="habit_list_nothing_scheduled_title">Nothing scheduled</string>
     <!-- Covers both "does not repeat that weekday" and "did not exist yet", so it stays true on
          any past day without needing the ViewModel to distinguish the two. -->

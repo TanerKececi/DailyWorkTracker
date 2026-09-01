@@ -39,6 +39,16 @@ data class Habit(
      * works with; the column is only how that shape is stored.
      */
     val goalUnit: String? = null,
+    /**
+     * Which part of the day this habit belongs to - "MORNING", "AFTERNOON", "EVENING" - or null
+     * for one with no particular time.
+     *
+     * Nullable rather than a fourth enum value, because null *is* the meaning: a habit with no
+     * part of the day is simply not tied to one. See `TimeOfDay`, which is the shape the rest of
+     * the app works with. Independent of the reminder: this labels when the habit belongs, the
+     * reminder decides when to be nagged about it.
+     */
+    val timeOfDay: String? = null,
     /** Soft delete: archived habits disappear from the UI but keep their completion history. */
     @ColumnInfo(defaultValue = "0")
     val isArchived: Boolean = false,

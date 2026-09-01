@@ -24,7 +24,7 @@ object DatabaseModule {
         Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
             // No destructive fallback: losing a user's habit history on upgrade is never the
             // right answer, so every version bump must ship a migration.
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
 
     @Provides

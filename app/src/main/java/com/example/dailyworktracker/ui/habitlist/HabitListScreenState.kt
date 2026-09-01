@@ -2,6 +2,7 @@ package com.example.dailyworktracker.ui.habitlist
 
 import androidx.annotation.StringRes
 import com.example.dailyworktracker.R
+import com.example.dailyworktracker.data.model.TimeOfDay
 import java.time.LocalDate
 
 /**
@@ -18,6 +19,8 @@ import java.time.LocalDate
 data class HabitListScreenState(
     val selectedDate: LocalDate,
     val today: LocalDate,
+    /** Which part of the day the list is filtered to; null is "all day". */
+    val timeFilter: TimeOfDay? = null,
     val displayState: HabitListDisplayState,
 ) {
     /** Future days cannot be completed, so stepping forward stops at today. */
@@ -51,6 +54,7 @@ data class HabitListScreenState(
             when (displayState) {
                 HabitListDisplayState.NoHabitsYet -> R.string.habit_list_empty_title
                 HabitListDisplayState.NothingScheduled -> R.string.habit_list_nothing_scheduled_title
+                HabitListDisplayState.NothingAtThisTime -> R.string.habit_list_nothing_at_time_title
                 else -> null
             }
 
@@ -60,6 +64,7 @@ data class HabitListScreenState(
             when (displayState) {
                 HabitListDisplayState.NoHabitsYet -> R.string.habit_list_empty_message
                 HabitListDisplayState.NothingScheduled -> R.string.habit_list_nothing_scheduled_message
+                HabitListDisplayState.NothingAtThisTime -> R.string.habit_list_nothing_at_time_message
                 else -> null
             }
 }
@@ -81,6 +86,9 @@ sealed interface HabitListDisplayState {
 
     /** No habits have been created yet. */
     data object NoHabitsYet : HabitListDisplayState
+
+    /** Habits are due today, just none in the part of the day being shown. */
+    data object NothingAtThisTime : HabitListDisplayState
 
     data class Error(val throwable: Throwable) : HabitListDisplayState
 

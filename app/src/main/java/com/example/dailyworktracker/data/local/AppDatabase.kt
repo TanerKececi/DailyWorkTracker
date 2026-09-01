@@ -17,7 +17,7 @@ import com.example.dailyworktracker.data.local.entity.HabitCompletion
  */
 @Database(
     entities = [Habit::class, HabitCompletion::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -43,6 +43,19 @@ abstract class AppDatabase : RoomDatabase() {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL("ALTER TABLE habits ADD COLUMN goalUnit TEXT")
                     db.execSQL("ALTER TABLE habit_completions ADD COLUMN amount INTEGER")
+                }
+            }
+
+        /**
+         * Adds the part of the day a habit belongs to.
+         *
+         * Nullable with no default, so every existing habit reads as belonging to no particular
+         * time - which is exactly what it was before the column existed.
+         */
+        val MIGRATION_2_3 =
+            object : Migration(2, 3) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE habits ADD COLUMN timeOfDay TEXT")
                 }
             }
     }

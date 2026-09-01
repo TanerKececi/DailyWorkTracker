@@ -7,8 +7,11 @@ import com.example.dailyworktracker.R
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.model.HabitGoal
 import com.example.dailyworktracker.data.model.HabitUnit
+import com.example.dailyworktracker.data.model.TimeOfDay
+import com.example.dailyworktracker.data.model.timeOfDay
 import com.example.dailyworktracker.data.model.toGoal
 import com.example.dailyworktracker.data.model.withGoal
+import com.example.dailyworktracker.data.model.withTimeOfDay
 import com.example.dailyworktracker.data.repository.HabitRepository
 import com.example.dailyworktracker.util.WeekdaySchedule
 import com.example.dailyworktracker.util.reminderTime
@@ -69,6 +72,7 @@ class AddEditHabitViewModel
                         reminderTime = habit.reminderTime ?: it.reminderTime,
                         isAmountTracked = habit.toGoal() is HabitGoal.Amount,
                         unit = (habit.toGoal() as? HabitGoal.Amount)?.unit ?: it.unit,
+                        timeOfDay = habit.timeOfDay(),
                     )
                 }
             }
@@ -90,6 +94,15 @@ class AddEditHabitViewModel
 
         fun onUnitChanged(unit: HabitUnit) {
             _uiState.update { it.copy(unit = unit) }
+        }
+
+        fun onTimeOfDaySelected(time: TimeOfDay) {
+            _uiState.update { it.copy(timeOfDay = time) }
+        }
+
+        /** Ties the habit to no particular time. Named rather than passing null - see the list. */
+        fun onAnyTimeSelected() {
+            _uiState.update { it.copy(timeOfDay = null) }
         }
 
         fun onDayToggled(
@@ -161,6 +174,7 @@ class AddEditHabitViewModel
                             emoji = emoji,
                             scheduleDaysBitmask = state.scheduleDaysBitmask,
                         ).withGoal(state.goal)
+                            .withTimeOfDay(state.timeOfDay)
                             .withReminderTime(state.reminderTime.takeIf { state.isReminderEnabled }),
                     )
                 } else {
@@ -171,6 +185,7 @@ class AddEditHabitViewModel
                             scheduleDaysBitmask = state.scheduleDaysBitmask,
                             createdAt = System.currentTimeMillis(),
                         ).withGoal(state.goal)
+                            .withTimeOfDay(state.timeOfDay)
                             .withReminderTime(state.reminderTime.takeIf { state.isReminderEnabled }),
                     )
                 }

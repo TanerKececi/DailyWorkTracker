@@ -6,7 +6,7 @@ import com.example.dailyworktracker.fake.FakeDateProvider
 import com.example.dailyworktracker.fake.FakeHabitRepository
 import com.example.dailyworktracker.fake.habit
 import com.example.dailyworktracker.testing.MainDispatcherRule
-import com.example.dailyworktracker.ui.common.UiState
+import com.example.dailyworktracker.ui.habitdetail.HabitDetailDisplayState.Content
 import com.example.dailyworktracker.util.WeekdaySchedule
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -33,8 +33,8 @@ class HabitDetailViewModelTest {
     private suspend fun awaitDetail(habitId: Long = 1L): HabitDetailUiState {
         lateinit var result: HabitDetailUiState
         viewModel(habitId).uiState.test {
-            assertEquals(UiState.Loading, awaitItem())
-            result = (awaitItem() as UiState.Success).data
+            assertEquals(HabitDetailDisplayState.Loading, awaitItem())
+            result = (awaitItem() as Content).habit
         }
         return result
     }
@@ -82,8 +82,8 @@ class HabitDetailViewModelTest {
     fun `reports empty when the habit does not exist`() =
         runTest {
             viewModel(habitId = 99L).uiState.test {
-                assertEquals(UiState.Loading, awaitItem())
-                assertTrue(awaitItem() is UiState.Empty)
+                assertEquals(HabitDetailDisplayState.Loading, awaitItem())
+                assertEquals(HabitDetailDisplayState.Missing, awaitItem())
             }
         }
 

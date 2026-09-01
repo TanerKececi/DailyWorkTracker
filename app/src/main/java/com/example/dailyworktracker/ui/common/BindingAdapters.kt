@@ -117,3 +117,15 @@ fun TextView.setStreakCount(streak: Int) {
         text = resources.getQuantityString(R.plurals.habit_streak, streak, streak)
     }
 }
+
+/** Heading for the history grid, naming the number of weeks it actually draws. */
+@BindingAdapter("weeksShown")
+fun TextView.setWeeksShown(weeks: Int) {
+    text = resources.getQuantityString(R.plurals.habit_detail_last_weeks, weeks, weeks)
+}
+
+/** Running total of completions, including days that fall outside the visible grid. */
+@BindingAdapter("totalCompletions")
+fun TextView.setTotalCompletions(count: Int) {
+    text = resources.getQuantityString(R.plurals.habit_detail_total_completions, count, count)
+}

@@ -8,7 +8,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -19,16 +18,12 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.FragmentHabitDetailBinding
-import com.example.dailyworktracker.databinding.ItemStatTileBinding
-import com.example.dailyworktracker.ui.common.ScheduleFormatter
-import com.example.dailyworktracker.ui.common.UiState
 import com.example.dailyworktracker.ui.common.viewBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.Locale
-import kotlin.math.roundToInt
 
 /** One habit's history: streaks, completion rate, and a grid of recent days. */
 @AndroidEntryPoint
@@ -101,87 +96,17 @@ class HabitDetailFragment : Fragment(R.layout.fragment_habit_detail) {
         }
     }
 
+    /**
+     * The layout renders itself from the state; this only hands each new value over.
+     *
+     * The state is assigned rather than bound as a StateFlow because databinding-ktx, which would
+     * observe the flow directly, is disabled - see the note in the module's build file.
+     */
     private fun observeUiState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect(::render)
+                viewModel.uiState.collect { binding.state = it }
             }
         }
-    }
-
-    private fun render(state: UiState<HabitDetailUiState>) =
-        with(binding) {
-            progressLoading.isVisible = state is UiState.Loading
-            scrollContent.isVisible = state is UiState.Success
-            groupEmpty.isVisible = state is UiState.Empty
-            groupError.isVisible = state is UiState.Error
-
-            when (state) {
-                is UiState.Success -> renderHabit(state.data)
-
-                is UiState.Empty -> {
-                    textEmptyTitle.setText(state.titleRes)
-                    textEmptyMessage.setText(state.messageRes)
-                }
-
-                is UiState.Error -> textErrorMessage.text = state.throwable.localizedMessage
-                UiState.Loading -> Unit
-            }
-        }
-
-    private fun renderHabit(data: HabitDetailUiState) =
-        with(binding) {
-            val context = requireContext()
-
-            textEmoji.text = data.emoji
-            textTitle.text = data.title
-            textSchedule.text = ScheduleFormatter.format(context, data.scheduleDaysBitmask)
-            toolbar.title = data.title
-
-            bindTile(
-                tile = tileCurrentStreak,
-                value = getString(R.string.habit_detail_days_value, data.currentStreak),
-                label = getString(R.string.habit_detail_current_streak),
-            )
-            bindTile(
-                tile = tileLongestStreak,
-                value = getString(R.string.habit_detail_days_value, data.longestStreak),
-                label = getString(R.string.habit_detail_longest_streak),
-            )
-            bindTile(
-                tile = tileCompletionRate,
-                value =
-                    getString(
-                        R.string.habit_detail_rate_value,
-                        (data.completionRate * PERCENT).roundToInt(),
-                    ),
-                label = getString(R.string.habit_detail_completion_rate),
-            )
-
-            // The grid starts at the habit's first week, so label the span actually drawn.
-            val weeksShown = data.heatmap.count { it is HeatmapItem.WeekGutter }
-            textHeatmapTitle.text =
-                resources.getQuantityString(R.plurals.habit_detail_last_weeks, weeksShown, weeksShown)
-            textTotalCompletions.text =
-                resources.getQuantityString(
-                    R.plurals.habit_detail_total_completions,
-                    data.completedCount,
-                    data.completedCount,
-                )
-
-            heatmapAdapter.submitList(data.heatmap)
-        }
-
-    private fun bindTile(
-        tile: ItemStatTileBinding,
-        value: String,
-        label: String,
-    ) {
-        tile.textStatValue.text = value
-        tile.textStatLabel.text = label
-    }
-
-    private companion object {
-        const val PERCENT = 100
     }
 }

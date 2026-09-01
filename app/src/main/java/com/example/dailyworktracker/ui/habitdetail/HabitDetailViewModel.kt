@@ -3,10 +3,8 @@ package com.example.dailyworktracker.ui.habitdetail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.dailyworktracker.R
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.repository.HabitRepository
-import com.example.dailyworktracker.ui.common.UiState
 import com.example.dailyworktracker.util.DateProvider
 import com.example.dailyworktracker.util.HabitStatistics
 import com.example.dailyworktracker.util.HabitVisibility
@@ -35,26 +33,23 @@ class HabitDetailViewModel
     ) : ViewModel() {
         private val habitId: Long = requireNotNull(savedStateHandle[ARG_HABIT_ID])
 
-        val uiState: StateFlow<UiState<HabitDetailUiState>> =
+        val uiState: StateFlow<HabitDetailDisplayState> =
             combine(
                 repository.observeHabit(habitId),
                 repository.observeCompletionDates(habitId),
             ) { habit, completionDates ->
                 // Archiving or deleting the habit elsewhere leaves this screen with nothing to show.
                 if (habit == null) {
-                    UiState.Empty(
-                        titleRes = R.string.habit_detail_missing_title,
-                        messageRes = R.string.habit_detail_missing_message,
-                    )
+                    HabitDetailDisplayState.Missing
                 } else {
-                    UiState.Success(buildState(habit, completionDates.toSet()))
+                    HabitDetailDisplayState.Content(buildState(habit, completionDates.toSet()))
                 }
             }
-                .catch { emit(UiState.Error(it)) }
+                .catch { emit(HabitDetailDisplayState.Error(it)) }
                 .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-                    initialValue = UiState.Loading,
+                    initialValue = HabitDetailDisplayState.Loading,
                 )
 
         private fun buildState(

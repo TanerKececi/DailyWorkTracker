@@ -5,9 +5,15 @@
 
     <data>
 
+        <import type="com.example.dailyworktracker.ui.habitdetail.ChartRange" />
+
         <variable
             name="state"
             type="com.example.dailyworktracker.ui.habitdetail.HabitDetailDisplayState" />
+
+        <variable
+            name="viewModel"
+            type="com.example.dailyworktracker.ui.habitdetail.HabitDetailViewModel" />
 
     </data>
 
@@ -91,11 +97,21 @@
 
                 </LinearLayout>
 
-                <!-- Stat tiles -->
+                <!--
+                  Records: four tiles in two rows. Three across was already tight, and the fourth
+                  would not have fitted at all without shrinking the numbers past reading size.
+                -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/habit_detail_records_title"
+                    android:textAppearance="?attr/textAppearanceTitleSmall" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
+                    android:layout_marginTop="12dp"
                     android:baselineAligned="false"
                     android:orientation="horizontal">
 
@@ -117,6 +133,24 @@
                         android:layout_weight="1"
                         app:label="@{@string/habit_detail_longest_streak}"
                         app:value="@{@string/habit_detail_days_value(state.habit.longestStreak)}" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
+
+                    <include
+                        android:id="@+id/tileTotalDone"
+                        layout="@layout/item_stat_tile"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:label="@{@string/habit_detail_total_done}"
+                        app:value="@{@string/habit_detail_days_value(state.habit.completedCount)}" />
 
                     <include
                         android:id="@+id/tileCompletionRate"
@@ -172,9 +206,9 @@
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     app:totalAmount="@{state.habit.totalAmount}"
-                    app:totalDays="@{state.habit.completedCount}"
                     app:totalUnit="@{state.habit.unit}"
-                    tools:text="42 days · 512 pages in total" />
+                    app:visibleIf="@{state.habit.amountTracked}"
+                    tools:text="943 pages in total" />
 
                 <!--
                   The grid answers "did I do it"; this answers "how much". Only a habit logged as
@@ -188,6 +222,51 @@
                     android:text="@string/habit_detail_chart_title"
                     android:textAppearance="?attr/textAppearanceTitleSmall"
                     app:visibleIf="@{state.habit.amountTracked}" />
+
+                <!--
+                  Checked state is bound from the range, so these use onClick: a checked-change
+                  listener would fire while that binding is applied and echo straight back.
+                -->
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/groupChartRange"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:selectionRequired="true"
+                    app:singleSelection="true"
+                    app:visibleIf="@{state.habit.amountTracked}">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonRangeWeek"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checked="@{state.habit.chartRange == ChartRange.WEEK}"
+                        android:onClick="@{() -> viewModel.onChartRangeSelected(ChartRange.WEEK)}"
+                        android:text="@string/habit_detail_range_week" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonRangeMonth"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checked="@{state.habit.chartRange == ChartRange.MONTH}"
+                        android:onClick="@{() -> viewModel.onChartRangeSelected(ChartRange.MONTH)}"
+                        android:text="@string/habit_detail_range_month" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonRangeYear"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checked="@{state.habit.chartRange == ChartRange.YEAR}"
+                        android:onClick="@{() -> viewModel.onChartRangeSelected(ChartRange.YEAR)}"
+                        android:text="@string/habit_detail_range_year" />
+
+                </com.google.android.material.button.MaterialButtonToggleGroup>
 
                 <!--
                   Scrolls rather than fits: a month of columns cannot be squeezed into one screen
@@ -207,7 +286,8 @@
                         android:layout_height="wrap_content"
                         android:baselineAligned="false"
                         android:orientation="horizontal"
-                        app:amountBars="@{state.habit.recentAmounts}" />
+                        app:amountBars="@{state.habit.chartBars}"
+                        app:barRange="@{state.habit.chartRange}" />
 
                 </HorizontalScrollView>
 

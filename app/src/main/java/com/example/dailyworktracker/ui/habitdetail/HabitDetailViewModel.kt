@@ -13,6 +13,7 @@ import com.example.dailyworktracker.util.HabitVisibility
 import com.example.dailyworktracker.util.StreakCalculator
 import com.example.dailyworktracker.util.WeekdaySchedule
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -35,16 +36,24 @@ class HabitDetailViewModel
     ) : ViewModel() {
         private val habitId: Long = requireNotNull(savedStateHandle[ARG_HABIT_ID])
 
+        private val chartRange = MutableStateFlow(ChartRange.WEEK)
+
+        /** Which span the chart draws. Screen state, not stored: it resets with the screen. */
+        fun onChartRangeSelected(range: ChartRange) {
+            chartRange.value = range
+        }
+
         val uiState: StateFlow<HabitDetailDisplayState> =
             combine(
                 repository.observeHabit(habitId),
                 repository.observeCompletions(habitId),
-            ) { habit, completions ->
+                chartRange,
+            ) { habit, completions, range ->
                 // Archiving or deleting the habit elsewhere leaves this screen with nothing to show.
                 if (habit == null) {
                     HabitDetailDisplayState.Missing
                 } else {
-                    HabitDetailDisplayState.Content(buildState(habit, completions))
+                    HabitDetailDisplayState.Content(buildState(habit, completions, range))
                 }
             }
                 .catch { emit(HabitDetailDisplayState.Error(it)) }
@@ -57,6 +66,7 @@ class HabitDetailViewModel
         private fun buildState(
             habit: Habit,
             completions: Map<LocalDate, Int?>,
+            range: ChartRange,
         ): HabitDetailUiState {
             // Streaks and statistics only ever ask which days have a record, never how much.
             val completed = completions.keys
@@ -82,24 +92,52 @@ class HabitDetailViewModel
                 heatmap = buildHeatmap(habit, completions, createdOn, today),
                 unit = (habit.toGoal() as? HabitGoal.Amount)?.unit,
                 totalAmount = completions.values.sumOf { it ?: 0 },
-                recentAmounts = recentAmounts(completions, today),
+                chartRange = range,
+                chartBars = chartBars(completions, today, range),
             )
         }
 
         /**
-         * The last [CHART_DAYS] calendar days, most recent last.
+         * The chart's bars, oldest first so they read left to right.
          *
-         * A day with no record contributes a zero-height bar rather than being left out, so the
-         * dates along the bottom stay evenly spaced and a gap reads as a gap.
+         * A period with nothing recorded contributes a zero-height bar rather than being left out,
+         * so the labels along the bottom stay evenly spaced and a gap reads as a gap.
          */
-        private fun recentAmounts(
+        private fun chartBars(
             completions: Map<LocalDate, Int?>,
             today: LocalDate,
-        ): List<DailyAmount> =
-            (CHART_DAYS - 1 downTo 0).map { back ->
-                val date = today.minusDays(back.toLong())
-                DailyAmount(date = date, amount = completions[date] ?: 0)
+            range: ChartRange,
+        ): List<ChartBar> =
+            if (range == ChartRange.YEAR) {
+                monthlyBars(completions, today)
+            } else {
+                (range.days - 1 downTo 0).map { back ->
+                    val date = today.minusDays(back)
+                    ChartBar(start = date, amount = completions[date] ?: 0)
+                }
             }
+
+        /**
+         * Twelve months, each bar the sum of everything logged in it.
+         *
+         * Summed rather than averaged: the question a year answers is how much was done, and an
+         * average would quietly hide a month with one enormous day in it.
+         */
+        private fun monthlyBars(
+            completions: Map<LocalDate, Int?>,
+            today: LocalDate,
+        ): List<ChartBar> {
+            val totals =
+                completions.entries
+                    .groupBy { YearMonth.from(it.key) }
+                    .mapValues { (_, entries) -> entries.sumOf { it.value ?: 0 } }
+            val thisMonth = YearMonth.from(today)
+
+            return (MONTHS_SHOWN - 1 downTo 0).map { back ->
+                val month = thisMonth.minusMonths(back)
+                ChartBar(start = month.atDay(1), amount = totals[month] ?: 0)
+            }
+        }
 
         /**
          * Whole weeks ending on the week containing today, each row being a month gutter followed by
@@ -177,8 +215,8 @@ class HabitDetailViewModel
             const val ARG_HABIT_ID = "habitId"
             const val WEEKS_SHOWN = 12
 
-            /** A month of bars. The chart scrolls, so the limit is how far back is interesting. */
-            const val CHART_DAYS = 30
+            /** Bars in the yearly view, one per month. */
+            const val MONTHS_SHOWN = 12L
             const val DAYS_PER_WEEK = 7
 
             /** A month gutter plus its seven days; the grid is laid out in this many columns. */

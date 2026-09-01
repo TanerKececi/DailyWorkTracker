@@ -39,6 +39,7 @@ class HabitDetailFragment : Fragment(R.layout.fragment_habit_detail) {
     ) {
         super.onViewCreated(view, savedInstanceState)
         applyWindowInsets()
+        binding.viewModel = viewModel
         binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
         setUpHeatmap()
         observeUiState()

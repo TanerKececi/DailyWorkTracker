@@ -49,16 +49,14 @@
     <string name="habit_detail_missing_message">This habit no longer exists.</string>
     <string name="habit_detail_current_streak">Current streak</string>
     <string name="habit_detail_longest_streak">Best streak</string>
-    <string name="habit_detail_completion_rate">Completion</string>
+    <string name="habit_detail_completion_rate">Overall rate</string>
+    <string name="habit_detail_records_title">Records</string>
+    <string name="habit_detail_total_done">Total done</string>
     <string name="habit_detail_days_value">%1$d d</string>
     <string name="habit_detail_rate_value">%1$d%%</string>
     <plurals name="habit_detail_last_weeks">
         <item quantity="one">This week</item>
         <item quantity="other">Last %1$d weeks</item>
-    </plurals>
-    <plurals name="habit_detail_total_completions">
-        <item quantity="one">%1$d day completed in total</item>
-        <item quantity="other">%1$d days completed in total</item>
     </plurals>
     <string name="habit_detail_legend_missed">Missed</string>
     <string name="habit_detail_legend_done">Done</string>
@@ -79,12 +77,11 @@
     <string name="all_habits_schedule_with_reminder">%1$s · ⏰ %2$s</string>
 
     <!-- Streaks -->
-    <plurals name="habit_detail_days">
-        <item quantity="one">%d day</item>
-        <item quantity="other">%d days</item>
-    </plurals>
-    <string name="habit_detail_total_combined">%1$s &#183; %2$s in total</string>
-    <string name="habit_detail_chart_title">Last 30 days</string>
+    <string name="habit_detail_total_amount">%1$s in total</string>
+    <string name="habit_detail_chart_title">Charts</string>
+    <string name="habit_detail_range_week">Week</string>
+    <string name="habit_detail_range_month">Month</string>
+    <string name="habit_detail_range_year">Year</string>
 
     <plurals name="habit_amount_times">
         <item quantity="one">%d time</item>

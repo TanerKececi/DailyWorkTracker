@@ -10,6 +10,14 @@ enum class DayStatus {
     /** Due that day and done: a ticked box. */
     COMPLETED,
 
+    /**
+     * Some but not all of the habits due that day were done.
+     *
+     * Only the Progress calendar produces this: one habit's day is done or it is not. Without it a
+     * day four habits out of five were kept on would look like a day nothing happened.
+     */
+    PARTIAL,
+
     /** Due that day and missed: an empty box. Only assigned to days that have already resolved. */
     MISSED,
 

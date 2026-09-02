@@ -102,7 +102,9 @@ class HeatmapAdapter : ListAdapter<HeatmapItem, RecyclerView.ViewHolder>(DIFF_CA
         ) {
             val box: View = binding.viewCell
             when (status) {
-                DayStatus.COMPLETED -> {
+                // PARTIAL cannot arise here - this grid shows one habit, whose day is either done
+                // or not - but the branch has to exist, and "done" is the honest fallback.
+                DayStatus.COMPLETED, DayStatus.PARTIAL -> {
                     box.setBackgroundResource(R.drawable.bg_heatmap_day_filled)
                     box.backgroundTintList = ColorStateList.valueOf(attrColor(context, PRIMARY))
                 }

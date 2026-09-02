@@ -54,6 +54,18 @@
     </fragment>
 
     <fragment
+        android:id="@+id/progressFragment"
+        android:name="com.example.dailyworktracker.ui.progress.ProgressFragment"
+        android:label="@string/progress_title"
+        tools:layout="@layout/fragment_progress">
+
+        <action
+            android:id="@+id/action_progress_to_habitDetail"
+            app:destination="@id/habitDetailFragment" />
+
+    </fragment>
+
+    <fragment
         android:id="@+id/settingsFragment"
         android:name="com.example.dailyworktracker.ui.settings.SettingsFragment"
         android:label="@string/settings_title"

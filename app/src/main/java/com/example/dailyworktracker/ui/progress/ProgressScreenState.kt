@@ -28,8 +28,10 @@ data class ProgressScreenState(
     /** A month that has not happened yet has nothing to show, so the stepper stops at this one. */
     val canGoToNextMonth: Boolean get() = month.isBefore(YearMonth.from(today))
 
-    val isSummary: Boolean get() = mode == ProgressMode.SUMMARY
-    val isHabits: Boolean get() = mode == ProgressMode.HABITS
+    // Named "...Mode" deliberately: data binding de-prefixes `isHabits` to `state.habits`, which
+    // would collide with the habits list below and resolve to whichever it found first.
+    val isSummaryMode: Boolean get() = mode == ProgressMode.SUMMARY
+    val isHabitsMode: Boolean get() = mode == ProgressMode.HABITS
 
     // flat accessors for XML only
     val isLoading: Boolean get() = displayState is ProgressDisplayState.Loading
@@ -38,8 +40,8 @@ data class ProgressScreenState(
     val isError: Boolean get() = displayState is ProgressDisplayState.Error
 
     /** Summary shows the ring and the calendar; Habits shows the breakdown. Never both. */
-    val showsCalendar: Boolean get() = isContent && isSummary
-    val showsHabits: Boolean get() = isContent && isHabits
+    val showsCalendar: Boolean get() = isContent && isSummaryMode
+    val showsHabits: Boolean get() = isContent && isHabitsMode
 
     /** The toggle is meaningless with nothing to toggle between. */
     val showsToggle: Boolean get() = isContent

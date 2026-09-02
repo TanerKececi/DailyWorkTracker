@@ -23,7 +23,9 @@ import com.google.android.material.color.MaterialColors
 import com.google.android.material.textfield.TextInputLayout
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.util.Locale
 
 /*
@@ -276,4 +278,18 @@ fun TextView.setTotalAmount(
                 resources.getQuantityString(it.pluralRes(), amount, amount),
             )
         }
+}
+
+/**
+ * Writes a month as "August", or "August 2025" once it falls outside the current year.
+ *
+ * Formatted here rather than in the ViewModel for the usual reason: naming a month needs a Locale,
+ * which belongs to the view layer. The year is dropped in the common case so the stepper reads as a
+ * heading rather than a date.
+ */
+@BindingAdapter("monthLabel")
+fun TextView.setMonthLabel(month: YearMonth?) {
+    if (month == null) return
+    val name = month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
+    text = if (month.year == LocalDate.now().year) name else "$name ${month.year}"
 }

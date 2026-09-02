@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="com.example.dailyworktracker.ui.progress.ProgressMode" />
+
+        <variable
+            name="state"
+            type="com.example.dailyworktracker.ui.progress.ProgressScreenState" />
+
+        <variable
+            name="viewModel"
+            type="com.example.dailyworktracker.ui.progress.ProgressViewModel" />
+
+    </data>
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fitsSystemWindows="true">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:title="@string/progress_title" />
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingBottom="16dp"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!--
+                  The month stepper, following the habit list's date bar: the buttons are wired in
+                  the layout, and the next one is disabled rather than hidden so the row keeps its
+                  shape at the current month.
+                -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="8dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonPreviousMonth"
+                        style="@style/Widget.Material3.Button.IconButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/progress_previous_month"
+                        android:onClick="@{() -> viewModel.onPreviousMonthClicked()}"
+                        app:icon="@drawable/ic_chevron_left" />
+
+                    <TextView
+                        android:id="@+id/textMonth"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorPrimary"
+                        app:monthLabel="@{state.month}"
+                        tools:text="August" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonNextMonth"
+                        style="@style/Widget.Material3.Button.IconButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/progress_next_month"
+                        android:enabled="@{state.canGoToNextMonth}"
+                        android:onClick="@{() -> viewModel.onNextMonthClicked()}"
+                        app:icon="@drawable/ic_chevron_right" />
+
+                </LinearLayout>
+
+                <!--
+                  Click, not checked-change: the checked state is bound from the state, and a change
+                  listener would fire while that binding is applied and echo straight back.
+                -->
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/groupProgressMode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="8dp"
+                    app:selectionRequired="true"
+                    app:singleSelection="true"
+                    app:visibleIf="@{state.showsToggle}">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonModeSummary"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="@{state.summaryMode}"
+                        android:onClick="@{() -> viewModel.onModeSelected(ProgressMode.SUMMARY)}"
+                        android:text="@string/progress_mode_summary" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonModeHabits"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="@{state.habitsMode}"
+                        android:onClick="@{() -> viewModel.onModeSelected(ProgressMode.HABITS)}"
+                        android:text="@string/progress_mode_habits" />
+
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                <!-- Summary: the ring, then the month it describes. -->
+                <LinearLayout
+                    android:id="@+id/groupSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:visibleIf="@{state.showsCalendar}">
+
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="24dp">
+
+                        <com.google.android.material.progressindicator.CircularProgressIndicator
+                            android:id="@+id/progressRing"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:max="100"
+                            android:progress="@{state.percent}"
+                            app:indicatorSize="168dp"
+                            app:trackCornerRadius="8dp"
+                            app:trackThickness="14dp"
+                            tools:progress="77" />
+
+                        <TextView
+                            android:id="@+id/textProgressPercent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text="@{@string/progress_habit_rate(state.percent)}"
+                            android:textAppearance="?attr/textAppearanceHeadlineLarge"
+                            tools:text="77%" />
+
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center"
+                        android:text="@string/progress_rate_label"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <LinearLayout
+                        android:id="@+id/rowCalendarWeekdays"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:paddingHorizontal="12dp"
+                        android:orientation="horizontal" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerCalendar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:nestedScrollingEnabled="false"
+                        android:paddingHorizontal="12dp"
+                        app:items="@{state.days}"
+                        tools:itemCount="35"
+                        tools:listitem="@layout/item_calendar_day" />
+
+                    <include
+                        android:id="@+id/legendCalendar"
+                        layout="@layout/view_heatmap_legend"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="16dp" />
+
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerProgressHabits"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false"
+                    app:items="@{state.habits}"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    app:visibleIf="@{state.showsHabits}"
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_progress_habit" />
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/progressLoading"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="48dp"
+                    android:indeterminate="true"
+                    app:visibleIf="@{state.loading}"
+                    tools:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/groupEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="48dp"
+                    android:paddingTop="72dp"
+                    app:visibleIf="@{state.empty}"
+                    tools:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                        app:textRes="@{state.emptyTitleRes}"
+                        tools:text="Nothing to measure yet" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        app:textRes="@{state.emptyMessageRes}"
+                        tools:text="Add a habit and your progress will show up here." />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/groupError"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="48dp"
+                    android:paddingTop="72dp"
+                    app:visibleIf="@{state.error}"
+                    tools:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/habit_list_error_title"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                    <TextView
+                        android:id="@+id/textErrorMessage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:text="@{state.errorMessage}"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        tools:text="Database unavailable" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+</layout>

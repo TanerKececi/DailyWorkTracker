@@ -85,7 +85,7 @@ class MigrationTest {
      * whoever has never updated goes from 1 straight through to the current version in one open.
      */
     @Test
-    fun migrate1To3_chainsEveryStep() =
+    fun migrate1To4_chainsEveryStep() =
         runTest {
             helper.createDatabase(TEST_DB, 1).use { db ->
                 db.execSQL(
@@ -105,10 +105,11 @@ class MigrationTest {
 
             helper.runMigrationsAndValidate(
                 TEST_DB,
-                3,
+                4,
                 true,
                 AppDatabase.MIGRATION_1_2,
                 AppDatabase.MIGRATION_2_3,
+                AppDatabase.MIGRATION_3_4,
             )
 
             val database = migratedDatabase()
@@ -121,13 +122,59 @@ class MigrationTest {
             assertEquals(listOf(date.toEpochDay()), completedDates.map { it.date })
         }
 
+    /**
+     * Adding skips must not disturb what is already stored.
+     *
+     * The table is new and empty, so every day of history keeps the only two outcomes it ever had:
+     * a completion row means done, and its absence means missed. Nothing becomes retroactively
+     * skipped.
+     */
+    @Test
+    fun migrate3To4_addsAnEmptySkipsTableAndLeavesHistoryAlone() =
+        runTest {
+            helper.createDatabase(TEST_DB, 3).use { db ->
+                db.execSQL(
+                    """
+                    INSERT INTO habits (id, title, emoji, colorHex, scheduleDaysBitmask,
+                                        reminderHour, reminderMinute, createdAt, isArchived,
+                                        goalUnit, timeOfDay)
+                    VALUES (1, 'Brush teeth', 'X', NULL, 127, NULL, NULL, 0, 0, NULL, NULL)
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    INSERT INTO habit_completions (id, habitId, date, completedAt, amount)
+                    VALUES (1, 1, ${date.toEpochDay()}, 0, NULL)
+                    """.trimIndent(),
+                )
+            }
+
+            helper.runMigrationsAndValidate(TEST_DB, 4, true, AppDatabase.MIGRATION_3_4)
+
+            val database = migratedDatabase()
+            assertEquals("Brush teeth", database.habitDao().getById(1L)?.title)
+            assertEquals(
+                listOf(date.toEpochDay()),
+                database.habitCompletionDao().observeCompletions(1L).first().map { it.date },
+            )
+            assertEquals(
+                "A day that was merely never done must not arrive as a skip",
+                emptyList<Long>(),
+                database.habitSkipDao().observeSkipDates(1L).first(),
+            )
+        }
+
     /** Opens the migrated file through Room itself, so the entities and the columns must agree. */
     private fun migratedDatabase(): AppDatabase =
         Room.databaseBuilder(
             ApplicationProvider.getApplicationContext(),
             AppDatabase::class.java,
             TEST_DB,
-        ).addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
+        ).addMigrations(
+            AppDatabase.MIGRATION_1_2,
+            AppDatabase.MIGRATION_2_3,
+            AppDatabase.MIGRATION_3_4,
+        )
             .build()
             .also(helper::closeWhenFinished)
 

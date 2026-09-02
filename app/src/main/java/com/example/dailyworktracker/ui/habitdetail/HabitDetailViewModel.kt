@@ -47,13 +47,14 @@ class HabitDetailViewModel
             combine(
                 repository.observeHabit(habitId),
                 repository.observeCompletions(habitId),
+                repository.observeSkips(habitId),
                 chartRange,
-            ) { habit, completions, range ->
+            ) { habit, completions, skipped, range ->
                 // Archiving or deleting the habit elsewhere leaves this screen with nothing to show.
                 if (habit == null) {
                     HabitDetailDisplayState.Missing
                 } else {
-                    HabitDetailDisplayState.Content(buildState(habit, completions, range))
+                    HabitDetailDisplayState.Content(buildState(habit, completions, skipped, range))
                 }
             }
                 .catch { emit(HabitDetailDisplayState.Error(it)) }
@@ -66,6 +67,7 @@ class HabitDetailViewModel
         private fun buildState(
             habit: Habit,
             completions: Map<LocalDate, Int?>,
+            skipped: Set<LocalDate>,
             range: ChartRange,
         ): HabitDetailUiState {
             // Streaks and statistics only ever ask which days have a record, never how much.
@@ -78,15 +80,16 @@ class HabitDetailViewModel
                 emoji = habit.emoji,
                 scheduleDaysBitmask = habit.scheduleDaysBitmask,
                 currentStreak =
-                    StreakCalculator.currentStreak(completed, habit.scheduleDaysBitmask, today),
+                    StreakCalculator.currentStreak(completed, habit.scheduleDaysBitmask, today, skipped),
                 longestStreak =
-                    StreakCalculator.longestStreak(completed, habit.scheduleDaysBitmask, today),
+                    StreakCalculator.longestStreak(completed, habit.scheduleDaysBitmask, today, skipped),
                 completionRate =
                     HabitStatistics.completionRate(
                         completedDates = completed,
                         scheduleDaysBitmask = habit.scheduleDaysBitmask,
                         from = createdOn,
                         to = today,
+                        skippedDates = skipped,
                     ),
                 completedCount = completed.size,
                 heatmap = buildHeatmap(habit, completions, createdOn, today),

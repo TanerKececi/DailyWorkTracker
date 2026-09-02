@@ -29,6 +29,14 @@ interface HabitRepository {
     /** Completed days for one habit, each with the amount logged on it (null when none was). */
     fun observeCompletions(habitId: Long): Flow<Map<LocalDate, Int?>>
 
+    /**
+     * Days one habit was deliberately skipped.
+     *
+     * A plain set of dates, not a map: unlike a completion, a skip has nothing to record but that
+     * it happened.
+     */
+    fun observeSkips(habitId: Long): Flow<Set<LocalDate>>
+
     suspend fun getHabit(habitId: Long): Habit?
 
     /**
@@ -76,5 +84,18 @@ interface HabitRepository {
         habitId: Long,
         date: LocalDate,
         amount: Int,
+    )
+
+    /**
+     * Marks [habitId] as deliberately skipped on [date], or clears the skip if it was already
+     * skipped.
+     *
+     * Skipping a day that was done clears the completion, and completing a skipped day clears the
+     * skip. The two are mutually exclusive, and this boundary is the only place that has to know
+     * it: a day is either done, deliberately not done, or simply unresolved.
+     */
+    suspend fun toggleSkip(
+        habitId: Long,
+        date: LocalDate,
     )
 }

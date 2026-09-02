@@ -15,4 +15,11 @@ data class TodayHabit(
     val currentStreak: Int,
     /** What was logged that day for an amount habit; null for a tick-it-off habit. */
     val amount: Int? = null,
+    /**
+     * Whether the day was deliberately skipped.
+     *
+     * Never true at the same time as [isCompleted]: the repository clears one when it writes the
+     * other, because a day cannot be both done and consciously not done.
+     */
+    val isSkipped: Boolean = false,
 )

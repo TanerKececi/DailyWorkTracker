@@ -468,4 +468,80 @@ class HabitListViewModelTest {
                 )
             }
         }
+
+    @Test
+    fun `swiping a row marks the day on screen as skipped`() =
+        runTest {
+            repository.seed(oldHabit(id = 1L))
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                assertEquals(HabitListDisplayState.Loading, awaitItem().displayState)
+                assertFalse((awaitItem().displayState as Content).habits.single().isSkipped)
+
+                viewModel.onHabitSkipToggled(habitId = 1L)
+
+                assertTrue((awaitItem().displayState as Content).habits.single().isSkipped)
+            }
+        }
+
+    @Test
+    fun `skipping the same row again takes the skip back`() =
+        runTest {
+            repository.seed(oldHabit(id = 1L))
+            val viewModel = subscribed()
+
+            viewModel.onHabitSkipToggled(habitId = 1L)
+            runCurrent()
+            viewModel.onHabitSkipToggled(habitId = 1L)
+            runCurrent()
+
+            val row = (viewModel.uiState.value.displayState as Content).habits.single()
+            assertFalse("Undo is the same gesture, so it must land back where it started", row.isSkipped)
+        }
+
+    @Test
+    fun `skipping a completed day clears the tick`() =
+        runTest {
+            repository.seed(oldHabit(id = 1L))
+            val viewModel = subscribed()
+            viewModel.onHabitCheckedChanged(habitId = 1L)
+            runCurrent()
+
+            viewModel.onHabitSkipToggled(habitId = 1L)
+            runCurrent()
+
+            val row = (viewModel.uiState.value.displayState as Content).habits.single()
+            assertTrue(row.isSkipped)
+            assertFalse("A day cannot read as both done and skipped", row.isCompleted)
+        }
+
+    @Test
+    fun `a skipped day does not break the streak shown on the row`() =
+        runTest {
+            repository.seed(oldHabit(id = 1L))
+            // Kept on Sunday and Saturday, skipped on Friday, kept on Thursday. The skip is passed
+            // over rather than ending the run, so all three kept days count as one streak.
+            repository.completeOn(1L, monday.minusDays(1), monday.minusDays(2), monday.minusDays(4))
+            repository.skipOn(1L, monday.minusDays(3))
+
+            viewModel().uiState.test {
+                assertEquals(HabitListDisplayState.Loading, awaitItem().displayState)
+                assertEquals(3, (awaitItem().displayState as Content).habits.single().currentStreak)
+            }
+        }
+
+    @Test
+    fun `a skip lands on the day being viewed, not on today`() =
+        runTest {
+            repository.seed(oldHabit(id = 1L))
+            val viewModel = subscribed()
+            viewModel.onPreviousDayClicked()
+            runCurrent()
+
+            viewModel.onHabitSkipToggled(habitId = 1L)
+            runCurrent()
+
+            assertEquals(listOf(monday.minusDays(1)), repository.skipsFor(1L))
+        }
 }

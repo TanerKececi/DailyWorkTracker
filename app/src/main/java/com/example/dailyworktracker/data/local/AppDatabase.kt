@@ -6,8 +6,10 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.dailyworktracker.data.local.dao.HabitCompletionDao
 import com.example.dailyworktracker.data.local.dao.HabitDao
+import com.example.dailyworktracker.data.local.dao.HabitSkipDao
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.local.entity.HabitCompletion
+import com.example.dailyworktracker.data.local.entity.HabitSkip
 
 /**
  * The app's single Room database.
@@ -16,14 +18,16 @@ import com.example.dailyworktracker.data.local.entity.HabitCompletion
  * here; the repository owns that conversion and exposes `LocalDate` to the rest of the app.
  */
 @Database(
-    entities = [Habit::class, HabitCompletion::class],
-    version = 3,
+    entities = [Habit::class, HabitCompletion::class, HabitSkip::class],
+    version = 4,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
 
     abstract fun habitCompletionDao(): HabitCompletionDao
+
+    abstract fun habitSkipDao(): HabitSkipDao
 
     companion object {
         const val DATABASE_NAME = "daily_work_tracker.db"
@@ -56,6 +60,32 @@ abstract class AppDatabase : RoomDatabase() {
             object : Migration(2, 3) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL("ALTER TABLE habits ADD COLUMN timeOfDay TEXT")
+                }
+            }
+
+        /**
+         * Adds the skipped-days table.
+         *
+         * Purely additive: no existing table is touched, so every habit and completion already
+         * stored keeps its exact meaning, and a database that has never skipped anything simply
+         * has an empty table.
+         */
+        val MIGRATION_3_4 =
+            object : Migration(3, 4) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `habit_skips` (" +
+                            "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                            "`habitId` INTEGER NOT NULL, " +
+                            "`date` INTEGER NOT NULL, " +
+                            "`createdAt` INTEGER NOT NULL, " +
+                            "FOREIGN KEY(`habitId`) REFERENCES `habits`(`id`) " +
+                            "ON UPDATE NO ACTION ON DELETE CASCADE )",
+                    )
+                    db.execSQL(
+                        "CREATE UNIQUE INDEX IF NOT EXISTS `index_habit_skips_habitId_date` " +
+                            "ON `habit_skips` (`habitId`, `date`)",
+                    )
                 }
             }
     }

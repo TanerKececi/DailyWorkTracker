@@ -162,4 +162,61 @@ class HabitStatisticsTest {
 
         assertEquals(1f, rate, 0f)
     }
+
+    @Test
+    fun `a skipped day leaves the denominator rather than counting as a miss`() {
+        // Four scheduled days, two kept, one skipped: the rate is 2 of 3, not 2 of 4. A skip that
+        // counted as a miss would be indistinguishable from simply not ticking.
+        val completed = daysBefore(1, 2)
+
+        assertEquals(
+            1f,
+            HabitStatistics.completionRate(
+                completed,
+                WeekdaySchedule.EVERY_DAY,
+                from = monday.minusDays(3),
+                to = monday,
+                skippedDates = daysBefore(3),
+            ),
+            0f,
+        )
+    }
+
+    @Test
+    fun `a day that is both completed and skipped counts as neither`() {
+        // The repository keeps the two mutually exclusive, but the ratio must not depend on that:
+        // a day counted in the numerator and not the denominator would push the rate above 100%.
+        val completed = daysBefore(2, 3)
+
+        assertEquals(
+            1f,
+            HabitStatistics.completionRate(
+                completed,
+                WeekdaySchedule.EVERY_DAY,
+                from = monday.minusDays(3),
+                to = monday.minusDays(1),
+                skippedDates = daysBefore(2),
+            ),
+            0f,
+        )
+    }
+
+    @Test
+    fun `skipping the final day keeps the rate on the days that resolved`() {
+        // The last day is already excluded while it is unfinished; skipping it must not make it
+        // count, and must not disturb the days before it.
+        val completed = daysBefore(1, 2)
+
+        assertEquals(
+            1f,
+            HabitStatistics.completionRate(
+                completed,
+                WeekdaySchedule.EVERY_DAY,
+                from = monday.minusDays(2),
+                to = monday,
+                skippedDates = daysBefore(0),
+            ),
+            0f,
+        )
+    }
 }

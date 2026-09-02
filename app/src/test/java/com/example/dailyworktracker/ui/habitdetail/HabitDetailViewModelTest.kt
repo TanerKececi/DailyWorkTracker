@@ -359,4 +359,38 @@ class HabitDetailViewModelTest {
 
             assertEquals(2f / 3f, awaitDetail().completionRate, 0.001f)
         }
+
+    @Test
+    fun `a skipped day bridges the streak instead of breaking it`() =
+        runTest {
+            repository.seed(habit(id = 1L))
+            // The same shape as the streak test above, except the gap was deliberate: one run.
+            repository.completeOn(1L, monday, monday.minusDays(1))
+            repository.completeOn(1L, monday.minusDays(3), monday.minusDays(4), monday.minusDays(5))
+            repository.skipOn(1L, monday.minusDays(2))
+
+            val state = awaitDetail()
+
+            assertEquals(5, state.currentStreak)
+            assertEquals(5, state.longestStreak)
+        }
+
+    @Test
+    fun `a skipped day leaves the completion rate alone`() =
+        runTest {
+            val createdOn = monday.minusDays(3)
+            repository.seed(
+                habit(
+                    id = 1L,
+                    createdAt =
+                        createdOn.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                ),
+            )
+            // Two kept days and one skipped: 2 of 2, not 2 of 3. The detail screen has to agree
+            // with the list, or the same skip would read as neutral in one place and a miss here.
+            repository.completeOn(1L, monday.minusDays(1), monday.minusDays(2))
+            repository.skipOn(1L, monday.minusDays(3))
+
+            assertEquals(1f, awaitDetail().completionRate, 0.001f)
+        }
 }

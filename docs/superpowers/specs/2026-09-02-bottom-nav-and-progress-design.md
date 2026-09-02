@@ -124,10 +124,34 @@ One new instrumented test covers what only a real navigator can:
 
 - selecting a tab changes the current destination;
 - tapping `+` opens the add/edit sheet **and leaves the selected tab unchanged** —
-  the single assertion that would catch the `+` being wired as a destination.
+  the single assertion that would catch the `+` being wired as a destination;
+- the bar is hidden on `habitDetailFragment`.
 
-`HabitListNavigationTest` navigates programmatically and should still pass
-unmodified.
+### `HabitListNavigationTest` has to be reworked, carefully
+
+It asserts on precisely what this PR deletes: `action_all_habits` (two tests),
+`R.id.fabAddHabit` (one test), and the `action_habitList_to_allHabits` action
+used to navigate. It cannot survive unmodified.
+
+What it actually guards is a **view-lifecycle regression**, not a menu: the
+`ViewBindingDelegate` once handed a stale binding to a freshly created view, so
+everything configured in `onViewCreated` landed on a detached hierarchy. The
+vanishing menu and FAB were only the symptoms that happened to be visible.
+
+So the rework must preserve the guard while changing the subject:
+
+- The two toolbar-menu tests lose their subject entirely — the menu is deleted,
+  so there is no longer any menu to lose or to double-inflate. They go.
+- `listContentSurvivesNavigatingAwayAndBack` **stays and becomes the guard**,
+  retargeted from the FAB to something `onViewCreated` configures and this PR
+  keeps: the RecyclerView's adapter being non-null after navigating away and
+  back. That asserts the binding was live when the screen was set up, which is
+  the actual property at risk.
+- Navigation switches from `action_habitList_to_allHabits` to the destination id.
+
+Deleting a regression test is only acceptable because the property it protected
+keeps a test. If the rework ever leaves that property uncovered, the stale-binding
+bug can return silently — it did real damage once.
 
 Verified on the emulator screen by screen: every tab root, the bar hidden on
 detail, no content trapped behind the bar, and the add sheet reachable from `+`.

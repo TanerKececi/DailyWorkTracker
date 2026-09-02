@@ -3,9 +3,6 @@ package com.example.dailyworktracker.ui.allhabits
 import android.os.Bundle
 import android.view.View
 import android.widget.PopupMenu
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -38,8 +35,6 @@ class AllHabitsFragment : Fragment(R.layout.fragment_all_habits) {
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
-        applyWindowInsets()
-        binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
         binding.recyclerHabits.adapter = habitAdapter
         observeUiState()
     }
@@ -49,16 +44,11 @@ class AllHabitsFragment : Fragment(R.layout.fragment_all_habits) {
         super.onDestroyView()
     }
 
-    private fun applyWindowInsets() {
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            val bottom =
-                insets.getInsets(
-                    WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
-                ).bottom
-            view.updatePadding(bottom = bottom)
-            insets
-        }
-    }
+    /*
+     * No bottom inset handling here any more. The Activity lays this screen out *above* the bottom
+     * bar, and the bar consumes the gesture-bar inset itself via fitsSystemWindows, so anything
+     * added here would be a second helping of padding for an edge this screen no longer reaches.
+     */
 
     /**
      * The layout renders itself from the state; this only hands each new value over.

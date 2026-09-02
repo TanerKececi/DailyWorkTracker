@@ -28,7 +28,6 @@
     <string name="date_jump_to_today">Today</string>
     <string name="date_picker_title">Select a day</string>
     <string name="habit_list_error_title">Something went wrong</string>
-    <string name="habit_list_add_habit">Add habit</string>
     <string name="habit_list_more_options">More options for %1$s</string>
     <!-- No "today": the same row is used when reviewing a past day. -->
     <string name="habit_completed_checkbox">Mark %1$s as done</string>

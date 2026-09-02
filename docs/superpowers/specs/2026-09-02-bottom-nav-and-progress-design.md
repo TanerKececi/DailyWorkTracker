@@ -108,11 +108,19 @@ The bar shows on tab roots only. The destination-changed listener hides it on
 
 ## Window insets
 
-The fiddly part, and the most likely source of a visual bug. Each screen
-currently pads its own bottom for the system bars. With a bar present, the tab
-roots must pad for the **bar's** height while the bar itself consumes the system
-inset. `habitDetailFragment` keeps its current behaviour, since the bar is
-hidden there.
+The fiddly part, and it did produce the one visual bug of this PR.
+
+Tab roots do **no bottom inset handling at all**. The Activity constrains the
+fragment container *above* the bar, and the bar consumes the gesture-bar inset
+itself via `fitsSystemWindows`, so a tab root never reaches that edge.
+
+The first attempt had them pad for the bar's height, on the reasoning that the
+bar was "in the way". It is not — it is outside the container — so that padding
+was a second helping: a dead gap above the bar and a clipped last row. Corrected
+after seeing it on the emulator.
+
+`habitDetailFragment` keeps its own inset handling, because the bar is hidden
+there and the container does then reach the bottom of the screen.
 
 ## Testing
 

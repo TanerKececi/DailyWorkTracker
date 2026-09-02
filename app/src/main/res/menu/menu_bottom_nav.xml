@@ -12,10 +12,13 @@
         android:id="@+id/allHabitsFragment"
         android:icon="@drawable/ic_list"
         android:title="@string/nav_my_habits" />
-    <!-- Not a destination: opens the add sheet and never becomes the selected tab. -->
+    <!--
+      Not a destination: opens the add sheet and never becomes the selected tab. Drawn as a filled
+      disc so it reads as the one action in a row of places, the way the mockup raises it.
+    -->
     <item
         android:id="@+id/action_add_habit"
-        android:icon="@drawable/ic_add"
+        android:icon="@drawable/ic_add_circle"
         android:title="@string/nav_add_habit" />
     <item
         android:id="@+id/progressFragment"

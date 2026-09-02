@@ -45,6 +45,11 @@ class CalendarAdapter : ListAdapter<CalendarDay, CalendarAdapter.DayViewHolder>(
             binding.root.isInvisible = item.date == null
             binding.textDay.text = item.date?.dayOfMonth?.toString().orEmpty()
 
+            // A day that has not happened yet keeps its number but loses its box. Drawing it as an
+            // outline - which is what MISSED looks like - would report the rest of the month as
+            // already failed.
+            box.isInvisible = item.status == DayStatus.OUT_OF_RANGE
+
             when (item.status) {
                 DayStatus.COMPLETED -> {
                     box.setBackgroundResource(R.drawable.bg_heatmap_day_filled)

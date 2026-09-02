@@ -82,6 +82,11 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     private companion object {
         val TAB_DESTINATIONS =
-            setOf(R.id.habitListFragment, R.id.allHabitsFragment, R.id.settingsFragment)
+            setOf(
+                R.id.habitListFragment,
+                R.id.allHabitsFragment,
+                R.id.progressFragment,
+                R.id.settingsFragment,
+            )
     }
 }

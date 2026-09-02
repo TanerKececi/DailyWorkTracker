@@ -18,6 +18,10 @@
         android:icon="@drawable/ic_add"
         android:title="@string/nav_add_habit" />
     <item
+        android:id="@+id/progressFragment"
+        android:icon="@drawable/ic_progress"
+        android:title="@string/nav_progress" />
+    <item
         android:id="@+id/settingsFragment"
         android:icon="@drawable/ic_settings"
         android:title="@string/nav_settings" />

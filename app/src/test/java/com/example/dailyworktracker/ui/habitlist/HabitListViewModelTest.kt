@@ -89,19 +89,15 @@ class HabitListViewModelTest {
                 val today = awaitItem()
                 assertEquals(monday, today.selectedDate)
                 assertEquals(monday, today.today)
-                assertFalse(today.canGoToNextDay)
-                assertFalse(today.showJumpToToday)
                 assertEquals(
                     listOf("Brush teeth"),
                     (today.displayState as Content).habits.map { it.title },
                 )
 
-                viewModel.onPreviousDayClicked()
+                viewModel.onDatePicked(monday.minusDays(1))
 
                 val yesterday = awaitItem()
                 assertEquals(monday.minusDays(1), yesterday.selectedDate)
-                assertTrue(yesterday.canGoToNextDay)
-                assertTrue(yesterday.showJumpToToday)
                 assertTrue(yesterday.displayState is Content)
             }
         }
@@ -179,7 +175,7 @@ class HabitListViewModelTest {
                 assertEquals(HabitListDisplayState.Loading, awaitItem().displayState)
                 awaitItem() // Today: one habit, not completed.
 
-                viewModel.onPreviousDayClicked()
+                viewModel.onDatePicked(monday.minusDays(1))
                 awaitItem() // Yesterday, still not completed.
                 viewModel.onHabitCheckedChanged(habitId = 1L)
 
@@ -218,7 +214,7 @@ class HabitListViewModelTest {
                 assertEquals(HabitListDisplayState.Loading, awaitItem().displayState)
                 assertTrue(awaitItem().displayState is Content)
 
-                viewModel.onPreviousDayClicked()
+                viewModel.onDatePicked(monday.minusDays(1))
 
                 assertEquals(HabitListDisplayState.NothingScheduled, awaitItem().displayState)
             }
@@ -245,17 +241,6 @@ class HabitListViewModelTest {
         }
 
     @Test
-    fun `cannot step past today`() =
-        runTest {
-            val viewModel = subscribed()
-
-            viewModel.onNextDayClicked()
-            runCurrent()
-
-            assertEquals(monday, viewModel.uiState.value.selectedDate)
-        }
-
-    @Test
     fun `picking a future date is clamped to today`() =
         runTest {
             val viewModel = subscribed()
@@ -266,30 +251,29 @@ class HabitListViewModelTest {
             assertEquals(monday, viewModel.uiState.value.selectedDate)
         }
 
+    /**
+     * Returning to today has to mean "today", not "this date".
+     *
+     * Otherwise a screen left open past midnight would keep showing yesterday, even though the
+     * user had come back to today before putting the phone down. This replaces a test of the
+     * jump-to-today button, which the date strip removed: the button is gone, but the rule it
+     * relied on is still here.
+     */
     @Test
-    fun `stepping back then forward returns to today`() =
-        runTest {
-            val viewModel = subscribed()
-
-            viewModel.onPreviousDayClicked()
-            runCurrent()
-            viewModel.onNextDayClicked()
-            runCurrent()
-
-            assertEquals(monday, viewModel.uiState.value.selectedDate)
-        }
-
-    @Test
-    fun `jump to today returns from a past day`() =
+    fun `returning to today makes the selection follow today again`() =
         runTest {
             val viewModel = subscribed()
 
             viewModel.onDatePicked(monday.minusDays(6))
             runCurrent()
-            viewModel.onTodayClicked()
+            viewModel.onDatePicked(monday)
             runCurrent()
 
-            assertEquals(monday, viewModel.uiState.value.selectedDate)
+            dateProvider.advanceTo(monday.plusDays(1))
+            viewModel.onScreenResumed()
+            runCurrent()
+
+            assertEquals(monday.plusDays(1), viewModel.uiState.value.selectedDate)
         }
 
     @Test
@@ -359,7 +343,7 @@ class HabitListViewModelTest {
                 assertEquals(HabitListDisplayState.Loading, awaitItem().displayState)
                 awaitItem()
 
-                viewModel.onPreviousDayClicked()
+                viewModel.onDatePicked(monday.minusDays(1))
                 awaitItem()
                 viewModel.onAmountEntered(habitId = 1L, amount = 12)
 
@@ -541,7 +525,7 @@ class HabitListViewModelTest {
         runTest {
             repository.seed(oldHabit(id = 1L))
             val viewModel = subscribed()
-            viewModel.onPreviousDayClicked()
+            viewModel.onDatePicked(monday.minusDays(1))
             runCurrent()
 
             viewModel.onHabitSkipToggled(habitId = 1L)
@@ -665,7 +649,7 @@ class HabitListViewModelTest {
             repository.seed(habit(id = 1L, createdAt = monday.minusDays(2).toEpochMilli()))
             val viewModel = subscribed()
 
-            viewModel.onPreviousDayClicked()
+            viewModel.onDatePicked(monday.minusDays(1))
             runCurrent()
 
             val days = viewModel.uiState.value.days

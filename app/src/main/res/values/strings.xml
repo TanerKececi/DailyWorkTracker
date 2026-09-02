@@ -75,6 +75,7 @@
     </plurals>
     <string name="habit_detail_legend_missed">Missed</string>
     <string name="habit_detail_legend_done">Done</string>
+    <string name="habit_detail_legend_skipped">Skipped</string>
 
     <!-- Home screen widget -->
     <string name="widget_description">Habits due today, ticked off from the home screen.</string>
@@ -91,10 +92,22 @@
     <!-- Settings -->
     <string name="settings_title">Settings</string>
 
+    <!-- Progress -->
+    <string name="progress_title">Progress</string>
+    <string name="progress_empty_title">Nothing to measure yet</string>
+    <string name="progress_empty_message">Add a habit and your progress will show up here.</string>
+    <string name="progress_mode_summary">Summary</string>
+    <string name="progress_mode_habits">Habits</string>
+    <string name="progress_rate_label">Current productivity</string>
+    <string name="progress_previous_month">Previous month</string>
+    <string name="progress_next_month">Next month</string>
+    <string name="progress_habit_rate">%1$d%%</string>
+
     <!-- Bottom navigation tab labels; kept short so all of them fit on a narrow screen -->
     <string name="nav_home">Home</string>
     <string name="nav_my_habits">My habits</string>
     <string name="nav_add_habit">Add</string>
+    <string name="nav_progress">Progress</string>
     <string name="nav_settings">Settings</string>
     <string name="all_habits_archived_badge">Archived</string>
     <!-- Schedule line once a reminder is set, e.g. "Mon, Wed, Fri · ⏰ 08:00" -->

@@ -7,6 +7,7 @@ import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.model.HabitGoal
 import com.example.dailyworktracker.data.model.toGoal
 import com.example.dailyworktracker.data.repository.HabitRepository
+import com.example.dailyworktracker.ui.common.DayStatus
 import com.example.dailyworktracker.util.DateProvider
 import com.example.dailyworktracker.util.HabitStatistics
 import com.example.dailyworktracker.util.HabitVisibility
@@ -92,7 +93,7 @@ class HabitDetailViewModel
                         skippedDates = skipped,
                     ),
                 completedCount = completed.size,
-                heatmap = buildHeatmap(habit, completions, createdOn, today),
+                heatmap = buildHeatmap(habit, completions, skipped, createdOn, today),
                 unit = (habit.toGoal() as? HabitGoal.Amount)?.unit,
                 totalAmount = completions.values.sumOf { it ?: 0 },
                 chartRange = range,
@@ -154,6 +155,7 @@ class HabitDetailViewModel
         private fun buildHeatmap(
             habit: Habit,
             completions: Map<LocalDate, Int?>,
+            skipped: Set<LocalDate>,
             createdOn: LocalDate,
             today: LocalDate,
         ): List<HeatmapItem> {
@@ -187,7 +189,7 @@ class HabitDetailViewModel
                     items +=
                         HeatmapItem.Day(
                             date = date,
-                            status = statusOf(habit, completed, date, createdOn, today),
+                            status = statusOf(habit, completed, skipped, date, createdOn, today),
                             isAlternateMonth = isAlternate,
                         )
                 }
@@ -199,6 +201,7 @@ class HabitDetailViewModel
         private fun statusOf(
             habit: Habit,
             completed: Set<LocalDate>,
+            skipped: Set<LocalDate>,
             date: LocalDate,
             createdOn: LocalDate,
             today: LocalDate,
@@ -208,6 +211,8 @@ class HabitDetailViewModel
                 !WeekdaySchedule.isScheduledOn(habit.scheduleDaysBitmask, date.dayOfWeek) ->
                     DayStatus.NOT_SCHEDULED
 
+                // A day nothing was due on is never "skipped", so this sits below the schedule test.
+                date in skipped -> DayStatus.SKIPPED
                 date in completed -> DayStatus.COMPLETED
                 // Today has not resolved yet, so it is neither a miss nor an off-day.
                 date == today -> DayStatus.PENDING

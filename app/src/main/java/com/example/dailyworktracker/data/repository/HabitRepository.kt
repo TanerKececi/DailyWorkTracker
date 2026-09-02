@@ -37,6 +37,21 @@ interface HabitRepository {
      */
     fun observeSkips(habitId: Long): Flow<Set<LocalDate>>
 
+    /**
+     * Completed days for every habit at once, keyed by habit id.
+     *
+     * The Progress screen judges a whole month across every habit, so a query per habit would mean
+     * a flow per habit and a combine whose shape changes whenever a habit is added. Personal habit
+     * histories stay small enough that one query grouped in memory is cheaper than the alternative.
+     *
+     * Habits with nothing recorded are absent rather than mapped to an empty set; callers read
+     * through `orEmpty()`.
+     */
+    fun observeAllCompletionDates(): Flow<Map<Long, Set<LocalDate>>>
+
+    /** Skipped days for every habit at once, keyed by habit id. Same reasoning as above. */
+    fun observeAllSkipDates(): Flow<Map<Long, Set<LocalDate>>>
+
     suspend fun getHabit(habitId: Long): Habit?
 
     /**

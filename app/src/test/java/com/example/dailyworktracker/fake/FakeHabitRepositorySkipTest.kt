@@ -94,4 +94,17 @@ class FakeHabitRepositorySkipTest {
             assertEquals(setOf(date), repository.observeSkips(1L).first())
             assertTrue(repository.observeSkips(2L).first().isEmpty())
         }
+
+    @Test
+    fun `history for every habit arrives keyed by habit`() =
+        runTest {
+            // The Progress screen judges a month across every habit at once, so it needs one
+            // emission covering all of them rather than a flow per habit.
+            repository.seed(habit(id = 1L), habit(id = 2L))
+            repository.completeOn(1L, date)
+            repository.skipOn(2L, date)
+
+            assertEquals(mapOf(1L to setOf(date)), repository.observeAllCompletionDates().first())
+            assertEquals(mapOf(2L to setOf(date)), repository.observeAllSkipDates().first())
+        }
 }

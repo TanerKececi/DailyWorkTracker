@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.ItemHeatmapCellBinding
 import com.example.dailyworktracker.databinding.ItemHeatmapMonthBinding
+import com.example.dailyworktracker.ui.common.DayStatus
 import com.google.android.material.color.MaterialColors
 import java.time.Year
 import java.time.format.DateTimeFormatter
@@ -101,9 +102,18 @@ class HeatmapAdapter : ListAdapter<HeatmapItem, RecyclerView.ViewHolder>(DIFF_CA
         ) {
             val box: View = binding.viewCell
             when (status) {
-                DayStatus.COMPLETED -> {
+                // PARTIAL cannot arise here - this grid shows one habit, whose day is either done
+                // or not - but the branch has to exist, and "done" is the honest fallback.
+                DayStatus.COMPLETED, DayStatus.PARTIAL -> {
                     box.setBackgroundResource(R.drawable.bg_heatmap_day_filled)
                     box.backgroundTintList = ColorStateList.valueOf(attrColor(context, PRIMARY))
+                }
+
+                // A deliberate rest day: filled, but muted, so it reads as handled rather than as
+                // either a win or a miss. An outline would be indistinguishable from a miss.
+                DayStatus.SKIPPED -> {
+                    box.setBackgroundResource(R.drawable.bg_heatmap_day_filled)
+                    box.backgroundTintList = ColorStateList.valueOf(attrColor(context, OUTLINE))
                 }
 
                 DayStatus.MISSED, DayStatus.OUT_OF_RANGE -> {
@@ -144,6 +154,8 @@ class HeatmapAdapter : ListAdapter<HeatmapItem, RecyclerView.ViewHolder>(DIFF_CA
                 when (item.status) {
                     DayStatus.COMPLETED -> context.getString(R.string.habit_detail_legend_done)
                     DayStatus.MISSED -> context.getString(R.string.habit_detail_legend_missed)
+                    // Without this a screen reader would call a deliberate rest day nothing at all.
+                    DayStatus.SKIPPED -> context.getString(R.string.habit_detail_legend_skipped)
                     else -> ""
                 }
             return if (state.isEmpty()) date else date + ", " + state
@@ -185,6 +197,9 @@ class HeatmapAdapter : ListAdapter<HeatmapItem, RecyclerView.ViewHolder>(DIFF_CA
         fun completedTint(context: Context): Int = attrColor(context, PRIMARY)
 
         fun missedTint(context: Context): Int = attrColor(context, OUTLINE)
+
+        /** The muted fill a skipped day is drawn with; the legend and the Progress grid reuse it. */
+        fun skippedTint(context: Context): Int = attrColor(context, OUTLINE)
 
         private val DIFF_CALLBACK =
             object : DiffUtil.ItemCallback<HeatmapItem>() {

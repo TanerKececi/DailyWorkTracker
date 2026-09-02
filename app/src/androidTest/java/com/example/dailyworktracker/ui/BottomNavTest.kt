@@ -101,4 +101,16 @@ class BottomNavTest {
             }
         }
     }
+
+    @Test
+    fun theProgressTabIsReachable() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            onView(withId(R.id.progressFragment)).perform(click())
+
+            assertEquals(
+                R.id.progressFragment,
+                scenario.navController().currentDestination?.id,
+            )
+        }
+    }
 }

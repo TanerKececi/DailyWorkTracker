@@ -23,6 +23,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.ZoneId
 
 class HabitListViewModelTest {
     @get:Rule
@@ -53,6 +55,9 @@ class HabitListViewModelTest {
         title: String = "Brush teeth",
         scheduleDaysBitmask: Int = WeekdaySchedule.EVERY_DAY,
     ) = habit(id = id, title = title, scheduleDaysBitmask = scheduleDaysBitmask, createdAt = 0L)
+
+    /** The strip's range comes from habit creation dates, which are stored as epoch millis. */
+    private fun LocalDate.toEpochMilli(): Long = atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
     @Test
     fun `starts on today`() =
@@ -631,5 +636,53 @@ class HabitListViewModelTest {
                 listOf(HabitSection.DONE),
                 rows.filterIsInstance<HabitListRow.Header>().map { it.section },
             )
+        }
+
+    @Test
+    fun `the date strip runs from the oldest habit to today, ending on today`() =
+        runTest {
+            // Scrolling has to reach every day the app has history for, or a date older than the
+            // strip would be unreachable now the arrows are gone.
+            val createdOn = monday.minusDays(3)
+            repository.seed(
+                habit(id = 1L, createdAt = createdOn.toEpochMilli()),
+                habit(id = 2L, createdAt = monday.minusDays(1).toEpochMilli()),
+            )
+
+            viewModel().uiState.test {
+                awaitItem()
+                val days = awaitItem().days
+
+                assertEquals(createdOn, days.first().date)
+                assertEquals(monday, days.last().date)
+                assertEquals(4, days.size)
+            }
+        }
+
+    @Test
+    fun `the strip marks today and the selected day apart`() =
+        runTest {
+            repository.seed(habit(id = 1L, createdAt = monday.minusDays(2).toEpochMilli()))
+            val viewModel = subscribed()
+
+            viewModel.onPreviousDayClicked()
+            runCurrent()
+
+            val days = viewModel.uiState.value.days
+            assertEquals(monday.minusDays(1), days.single { it.isSelected }.date)
+            assertEquals(monday, days.single { it.isToday }.date)
+        }
+
+    @Test
+    fun `an empty app still offers today on the strip`() =
+        runTest {
+            // Nothing to scroll through yet, but the strip must not be an empty row.
+            viewModel().uiState.test {
+                awaitItem()
+                val days = awaitItem().days
+
+                assertEquals(listOf(monday), days.map { it.date })
+                assertTrue(days.single().isToday)
+            }
         }
 }

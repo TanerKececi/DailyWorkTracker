@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  Today when it is not the selected day: an outline rather than a fill, so it points itself out
+  without competing with the selection.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@android:color/transparent" />
+    <stroke
+        android:width="1dp"
+        android:color="@android:color/white" />
+</shape>

@@ -36,63 +36,24 @@
                 tools:title="@string/habit_list_title" />
 
             <!--
-              The date bar lives in the AppBarLayout rather than the content area so it stays on
+              The date strip lives in the AppBarLayout rather than the content area so it stays on
               screen in every display state. If it were part of the content it would disappear on an
               empty past day, leaving no control to navigate back.
+
+              It scrolls back as far as the oldest habit, so every day the app has history for is
+              reachable without the arrows the mockup drops. The calendar picker moves to the
+              toolbar, for a jump further back than scrolling is worth.
             -->
-            <LinearLayout
-                android:id="@+id/barDate"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerDayStrip"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="4dp"
-                android:paddingBottom="8dp">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonPreviousDay"
-                    style="@style/Widget.Material3.Button.IconButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:contentDescription="@string/date_previous_day"
-                    android:onClick="@{() -> viewModel.onPreviousDayClicked()}"
-                    app:icon="@drawable/ic_chevron_left" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonPickDate"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:contentDescription="@string/date_pick_day"
-                    app:dateLabel="@{state.selectedDate}"
-                    app:icon="@drawable/ic_calendar"
-                    app:iconGravity="textStart"
-                    app:relativeTo="@{state.today}"
-                    tools:text="@string/date_today" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonNextDay"
-                    style="@style/Widget.Material3.Button.IconButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:contentDescription="@string/date_next_day"
-                    android:enabled="@{state.canGoToNextDay}"
-                    android:onClick="@{() -> viewModel.onNextDayClicked()}"
-                    app:icon="@drawable/ic_chevron_right" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonJumpToToday"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:onClick="@{() -> viewModel.onTodayClicked()}"
-                    android:text="@string/date_jump_to_today"
-                    app:visibleIf="@{state.showJumpToToday}"
-                    tools:visibility="visible" />
-
-            </LinearLayout>
+                android:clipToPadding="false"
+                android:paddingHorizontal="12dp"
+                android:paddingBottom="8dp"
+                app:items="@{state.days}"
+                tools:itemCount="7"
+                tools:listitem="@layout/item_date_strip_day" />
 
             <!--
               Part-of-day filter. Sits in the AppBarLayout with the date bar for the same reason:

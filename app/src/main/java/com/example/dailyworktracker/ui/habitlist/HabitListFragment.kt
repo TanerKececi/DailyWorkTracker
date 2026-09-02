@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.FragmentHabitListBinding
@@ -40,6 +41,9 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
             onMoreClicked = { item, anchor -> showHabitMenu(item, anchor) },
             onToggleSkipped = { item -> toggleSkip(item) },
         )
+
+    private val dayStripAdapter =
+        DayStripAdapter(onDayClicked = { day -> viewModel.onDatePicked(day.date) })
 
     /**
      * Skips the day on screen, or takes the skip back, and says which happened.
@@ -90,9 +94,12 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
-        // The date bar's stepper buttons are wired in the layout; only the picker needs a dialog.
+        // The strip and the list are both plain RecyclerViews; only the picker needs a dialog.
         binding.viewModel = viewModel
-        binding.buttonPickDate.setOnClickListener { showDatePicker() }
+        setUpToolbarMenu()
+        binding.recyclerDayStrip.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        binding.recyclerDayStrip.adapter = dayStripAdapter
         binding.recyclerHabits.adapter = habitAdapter
         // The default change animation cross-fades a rebound row by animating its alpha and its
         // translation, which fights both the dimmed look of a skipped row and the swipe reset
@@ -107,6 +114,26 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         // Corrects the shown day when the app has been left open across midnight.
         viewModel.onScreenResumed()
     }
+
+    /**
+     * The picker is a shortcut, not the only route: the strip already scrolls to the oldest habit.
+     *
+     * Inflated here rather than in the layout because the toolbar is shared with the date title,
+     * and a menu item is the only affordance left once the date bar's own button has gone.
+     */
+    private fun setUpToolbarMenu() =
+        with(binding.toolbar) {
+            menu.clear()
+            inflateMenu(R.menu.menu_habit_list)
+            setOnMenuItemClickListener { menuItem ->
+                if (menuItem.itemId == R.id.action_pick_date) {
+                    showDatePicker()
+                    true
+                } else {
+                    false
+                }
+            }
+        }
 
     private fun showDatePicker() {
         val state = viewModel.uiState.value
@@ -146,9 +173,26 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
      * added here would be a second helping of padding for an edge this screen no longer reaches.
      */
 
+    /**
+     * Keeps the chosen day on screen.
+     *
+     * The strip can be months long and opens at today, which is its far end, so without this the
+     * selection would sit off screen. Posted because the list has only just been submitted: the
+     * position does not exist until the adapter has taken the new items.
+     */
+    private fun scrollStripToSelection(state: HabitListScreenState) {
+        val position = state.days.indexOfFirst { it.isSelected }
+        if (position < 0) return
+        binding.recyclerDayStrip.post {
+            (binding.recyclerDayStrip.layoutManager as? LinearLayoutManager)
+                ?.scrollToPositionWithOffset(position, STRIP_SCROLL_OFFSET_PX)
+        }
+    }
+
     override fun onDestroyView() {
         // The adapter outlives the view here, so drop the RecyclerView's reference to it.
         binding.recyclerHabits.adapter = null
+        binding.recyclerDayStrip.adapter = null
         super.onDestroyView()
     }
 
@@ -162,7 +206,10 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
     private fun observeUiState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { binding.state = it }
+                viewModel.uiState.collect { state ->
+                    binding.state = state
+                    scrollStripToSelection(state)
+                }
             }
         }
     }
@@ -205,6 +252,9 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
 
     private companion object {
         const val DATE_PICKER_TAG = "date_picker"
+
+        /** Leaves a day or so visible to the left of the selection, so the strip reads as scrollable. */
+        const val STRIP_SCROLL_OFFSET_PX = 160
 
         /** Keeps the dialog's bare EditText off the dialog edges, in pixels. */
         const val DIALOG_PADDING = 48

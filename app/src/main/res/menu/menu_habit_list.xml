@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!--
+      The strip scrolls back to the oldest habit, so this is a shortcut rather than the only way
+      to reach a past day. Shown as an icon because the toolbar already carries the date itself.
+    -->
+    <item
+        android:id="@+id/action_pick_date"
+        android:icon="@drawable/ic_calendar"
+        android:title="@string/date_pick_day"
+        app:showAsAction="ifRoom" />
+</menu>

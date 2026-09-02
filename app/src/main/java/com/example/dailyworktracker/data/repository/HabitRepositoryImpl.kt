@@ -2,8 +2,10 @@ package com.example.dailyworktracker.data.repository
 
 import com.example.dailyworktracker.data.local.dao.HabitCompletionDao
 import com.example.dailyworktracker.data.local.dao.HabitDao
+import com.example.dailyworktracker.data.local.dao.HabitSkipDao
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.local.entity.HabitCompletion
+import com.example.dailyworktracker.data.local.entity.HabitSkip
 import com.example.dailyworktracker.data.model.TodayHabit
 import com.example.dailyworktracker.reminder.HabitReminderScheduler
 import com.example.dailyworktracker.util.HabitVisibility
@@ -29,6 +31,7 @@ class HabitRepositoryImpl
     constructor(
         private val habitDao: HabitDao,
         private val completionDao: HabitCompletionDao,
+        private val skipDao: HabitSkipDao,
         private val reminderScheduler: HabitReminderScheduler,
         private val widgetUpdater: HabitWidgetUpdater,
     ) : HabitRepository {
@@ -36,9 +39,15 @@ class HabitRepositoryImpl
             combine(
                 habitDao.observeHabitsWithStatus(date.toEpochDay()),
                 completionDao.observeAllCompletions(),
-            ) { habits, completions ->
+                skipDao.observeAllSkips(),
+            ) { habits, completions, skips ->
                 val datesByHabit =
                     completions
+                        .groupBy({ it.habitId }, { LocalDate.ofEpochDay(it.date) })
+                        .mapValues { (_, dates) -> dates.toSet() }
+
+                val skipsByHabit =
+                    skips
                         .groupBy({ it.habitId }, { LocalDate.ofEpochDay(it.date) })
                         .mapValues { (_, dates) -> dates.toSet() }
 
@@ -52,6 +61,7 @@ class HabitRepositoryImpl
                 habits
                     .filter { HabitVisibility.isActiveOn(it.habit, date) }
                     .map { habitWithStatus ->
+                        val skipped = skipsByHabit[habitWithStatus.habit.id].orEmpty()
                         TodayHabit(
                             habit = habitWithStatus.habit,
                             isCompleted = habitWithStatus.isCompleted,
@@ -60,8 +70,10 @@ class HabitRepositoryImpl
                                     completedDates = datesByHabit[habitWithStatus.habit.id].orEmpty(),
                                     scheduleDaysBitmask = habitWithStatus.habit.scheduleDaysBitmask,
                                     asOf = date,
+                                    skippedDates = skipped,
                                 ),
                             amount = amountsOnDate[habitWithStatus.habit.id],
+                            isSkipped = date in skipped,
                         )
                     }
             }
@@ -71,6 +83,10 @@ class HabitRepositoryImpl
         override fun observeCompletions(habitId: Long): Flow<Map<LocalDate, Int?>> =
             completionDao.observeCompletions(habitId)
                 .map { rows -> rows.associateBy({ LocalDate.ofEpochDay(it.date) }, { it.amount }) }
+
+        override fun observeSkips(habitId: Long): Flow<Set<LocalDate>> =
+            skipDao.observeSkipDates(habitId)
+                .map { days -> days.mapTo(mutableSetOf(), LocalDate::ofEpochDay) }
 
         override suspend fun getHabit(habitId: Long): Habit? = habitDao.getById(habitId)
 
@@ -126,6 +142,8 @@ class HabitRepositoryImpl
                         completedAt = System.currentTimeMillis(),
                     ),
                 )
+                // Doing it settles the day, so it is no longer one deliberately passed on.
+                skipDao.deleteOn(habitId, epochDay)
             }
             widgetUpdater.onHabitsChanged()
         }
@@ -151,6 +169,30 @@ class HabitRepositoryImpl
                             amount = amount,
                         ),
                     )
+            }
+            // Logging an amount is doing it, so it clears a skip for the same reason ticking does.
+            if (amount > 0) skipDao.deleteOn(habitId, epochDay)
+            widgetUpdater.onHabitsChanged()
+        }
+
+        override suspend fun toggleSkip(
+            habitId: Long,
+            date: LocalDate,
+        ) {
+            val epochDay = date.toEpochDay()
+            val existing = skipDao.getSkip(habitId, epochDay)
+            if (existing != null) {
+                skipDao.delete(existing)
+            } else {
+                skipDao.insert(
+                    HabitSkip(
+                        habitId = habitId,
+                        date = epochDay,
+                        createdAt = System.currentTimeMillis(),
+                    ),
+                )
+                // Passing on a day undoes having done it, so the two can never both be true.
+                completionDao.getCompletion(habitId, epochDay)?.let { completionDao.delete(it) }
             }
             widgetUpdater.onHabitsChanged()
         }

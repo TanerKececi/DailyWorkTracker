@@ -23,6 +23,7 @@ import java.time.LocalDate
 class FakeHabitRepository : HabitRepository {
     private val habits = MutableStateFlow<List<Habit>>(emptyList())
     private val completions = MutableStateFlow<Set<Completion>>(emptySet())
+    private val skips = MutableStateFlow<Set<Skip>>(emptySet())
 
     private var nextId = 1L
 
@@ -31,6 +32,8 @@ class FakeHabitRepository : HabitRepository {
     val unarchivedIds = mutableListOf<Long>()
 
     data class Completion(val habitId: Long, val date: LocalDate, val amount: Int? = null)
+
+    data class Skip(val habitId: Long, val date: LocalDate)
 
     /** Seeds habits directly, bypassing [addHabit], so tests can start from a known state. */
     fun seed(vararg seeded: Habit) {
@@ -51,12 +54,24 @@ class FakeHabitRepository : HabitRepository {
         completions.value += dates.map { Completion(habitId, it) }
     }
 
+    /** Seeds skipped days directly, for tests that need a history with rest days already in it. */
+    fun skipOn(
+        habitId: Long,
+        vararg dates: LocalDate,
+    ) {
+        skips.value += dates.map { Skip(habitId, it) }
+    }
+
+    fun skipsFor(habitId: Long): List<LocalDate> = skips.value.filter { it.habitId == habitId }.map { it.date }
+
     override fun observeHabitsFor(date: LocalDate): Flow<List<TodayHabit>> =
-        combine(habits, completions) { allHabits, allCompletions ->
+        combine(habits, completions, skips) { allHabits, allCompletions, allSkips ->
             allHabits
                 // Same predicate as the real repository, so the two cannot drift apart.
                 .filter { HabitVisibility.isActiveOn(it, date) }
                 .map { habit ->
+                    val skipped =
+                        allSkips.filter { it.habitId == habit.id }.map { it.date }.toSet()
                     TodayHabit(
                         habit = habit,
                         isCompleted = allCompletions.any { it.habitId == habit.id && it.date == date },
@@ -74,7 +89,9 @@ class FakeHabitRepository : HabitRepository {
                                         .toSet(),
                                 scheduleDaysBitmask = habit.scheduleDaysBitmask,
                                 asOf = date,
+                                skippedDates = skipped,
                             ),
+                        isSkipped = date in skipped,
                     )
                 }
         }
@@ -88,6 +105,9 @@ class FakeHabitRepository : HabitRepository {
         completions.map { all ->
             all.filter { it.habitId == habitId }.associateBy({ it.date }, { it.amount })
         }
+
+    override fun observeSkips(habitId: Long): Flow<Set<LocalDate>> =
+        skips.map { all -> all.filter { it.habitId == habitId }.map { it.date }.toSet() }
 
     override suspend fun getHabit(habitId: Long): Habit? = habits.value.find { it.id == habitId }
 
@@ -135,6 +155,7 @@ class FakeHabitRepository : HabitRepository {
             if (existing != null) {
                 completions.value - existing
             } else {
+                skips.value = skips.value - Skip(habitId, date)
                 completions.value + Completion(habitId, date)
             }
     }
@@ -149,6 +170,21 @@ class FakeHabitRepository : HabitRepository {
         val withoutDay = existing?.let { completions.value - it } ?: completions.value
         completions.value =
             if (amount <= 0) withoutDay else withoutDay + Completion(habitId, date, amount)
+        if (amount > 0) skips.value = skips.value - Skip(habitId, date)
+    }
+
+    /** Same mutual exclusion as the real repository: a day is done, skipped, or neither. */
+    override suspend fun toggleSkip(
+        habitId: Long,
+        date: LocalDate,
+    ) {
+        val skip = Skip(habitId, date)
+        if (skip in skips.value) {
+            skips.value = skips.value - skip
+        } else {
+            skips.value = skips.value + skip
+            existing(habitId, date)?.let { completions.value = completions.value - it }
+        }
     }
 
     private fun existing(

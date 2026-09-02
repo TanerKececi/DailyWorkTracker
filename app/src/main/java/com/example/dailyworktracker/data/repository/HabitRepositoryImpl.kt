@@ -88,6 +88,19 @@ class HabitRepositoryImpl
             skipDao.observeSkipDates(habitId)
                 .map { days -> days.mapTo(mutableSetOf(), LocalDate::ofEpochDay) }
 
+        override fun observeAllCompletionDates(): Flow<Map<Long, Set<LocalDate>>> =
+            completionDao.observeAllCompletions()
+                .map { rows -> groupByHabit(rows.map { it.habitId to it.date }) }
+
+        override fun observeAllSkipDates(): Flow<Map<Long, Set<LocalDate>>> =
+            skipDao.observeAllSkips()
+                .map { rows -> groupByHabit(rows.map { it.habitId to it.date }) }
+
+        /** Epoch days become LocalDates here, the same boundary every other date crosses. */
+        private fun groupByHabit(rows: List<Pair<Long, Long>>): Map<Long, Set<LocalDate>> =
+            rows.groupBy({ it.first }, { LocalDate.ofEpochDay(it.second) })
+                .mapValues { (_, dates) -> dates.toSet() }
+
         override suspend fun getHabit(habitId: Long): Habit? = habitDao.getById(habitId)
 
         override fun observeHabit(habitId: Long): Flow<Habit?> = habitDao.observeById(habitId)

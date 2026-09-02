@@ -109,6 +109,12 @@ class FakeHabitRepository : HabitRepository {
     override fun observeSkips(habitId: Long): Flow<Set<LocalDate>> =
         skips.map { all -> all.filter { it.habitId == habitId }.map { it.date }.toSet() }
 
+    override fun observeAllCompletionDates(): Flow<Map<Long, Set<LocalDate>>> =
+        completions.map { all -> all.groupBy({ it.habitId }, { it.date }).mapValues { it.value.toSet() } }
+
+    override fun observeAllSkipDates(): Flow<Map<Long, Set<LocalDate>>> =
+        skips.map { all -> all.groupBy({ it.habitId }, { it.date }).mapValues { it.value.toSet() } }
+
     override suspend fun getHabit(habitId: Long): Habit? = habits.value.find { it.id == habitId }
 
     override suspend fun isCompletedOn(

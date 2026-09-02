@@ -2,8 +2,10 @@ package com.example.dailyworktracker.data.sample
 
 import com.example.dailyworktracker.data.local.dao.HabitCompletionDao
 import com.example.dailyworktracker.data.local.dao.HabitDao
+import com.example.dailyworktracker.data.local.dao.HabitSkipDao
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.local.entity.HabitCompletion
+import com.example.dailyworktracker.data.local.entity.HabitSkip
 import com.example.dailyworktracker.data.model.HabitGoal
 import com.example.dailyworktracker.data.model.HabitUnit
 import com.example.dailyworktracker.data.model.TimeOfDay
@@ -36,10 +38,13 @@ class SampleDataSeeder
     constructor(
         private val habitDao: HabitDao,
         private val completionDao: HabitCompletionDao,
+        private val skipDao: HabitSkipDao,
         private val dateProvider: DateProvider,
         private val reminderScheduler: HabitReminderScheduler,
     ) {
         suspend fun seed() {
+            // Skips and completions both hang off habits with ON DELETE CASCADE, so clearing the
+            // habits clears their history too; there is nothing else to wipe.
             habitDao.deleteAll()
 
             val today = dateProvider.today()
@@ -67,8 +72,22 @@ class SampleDataSeeder
                     .filter { WeekdaySchedule.isScheduledOn(sample.schedule, it.dayOfWeek) }
                     // The final day is left open so "today" still has something to tick off.
                     .filter { it != today }
-                    .filter { random.nextFloat() < sample.adherence }
                     .forEach { date ->
+                        // Skipped is drawn first and wins outright, because the two are mutually
+                        // exclusive everywhere else: the repository clears one when it writes the
+                        // other, and seeded data that broke that rule would only ever be a lie.
+                        if (random.nextFloat() < sample.skipRate) {
+                            skipDao.insert(
+                                HabitSkip(
+                                    habitId = habitId,
+                                    date = date.toEpochDay(),
+                                    createdAt = date.toEpochMilli(),
+                                ),
+                            )
+                            return@forEach
+                        }
+                        if (random.nextFloat() >= sample.adherence) return@forEach
+
                         completionDao.insert(
                             HabitCompletion(
                                 habitId = habitId,
@@ -93,6 +112,14 @@ class SampleDataSeeder
             val weeksOfHistory: Long,
             /** Chance a scheduled day was kept, which is what gives each habit its own texture. */
             val adherence: Float,
+            /**
+             * Chance a scheduled day was deliberately skipped instead.
+             *
+             * Zero for most samples: a rest day is something a person chooses now and then, so a
+             * habit peppered with them would misrepresent the feature. The point is to have enough
+             * on screen to see that a skip reads as neutral rather than as a miss.
+             */
+            val skipRate: Float = 0f,
             /** A couple of samples carry one so reminders are visible without setting one up. */
             val reminderTime: LocalTime? = null,
             val isArchived: Boolean = false,
@@ -136,24 +163,27 @@ class SampleDataSeeder
                         WeekdaySchedule.EVERY_DAY,
                         14,
                         0.97f,
-                        LocalTime.of(7, 30),
+                        reminderTime = LocalTime.of(7, 30),
                         timeOfDay = TimeOfDay.MORNING,
                     ),
                     // Partial schedule, logged in minutes: an off-day gap in both grid and chart.
+                    // Also the clearest case for rest days - a training week usually has one.
                     Sample(
                         "Do sport",
                         "🏃",
                         MON_WED_FRI,
                         12,
                         0.78f,
-                        LocalTime.of(18, 0),
+                        skipRate = 0.12f,
+                        reminderTime = LocalTime.of(18, 0),
                         unit = HabitUnit.MINUTES,
                         amountRange = 20..60,
                         timeOfDay = TimeOfDay.AFTERNOON,
                     ),
                     // Patchy: the interesting case for streaks and completion rate.
                     Sample("Wash dishes", "🍽", WeekdaySchedule.EVERY_DAY, 10, 0.55f),
-                    Sample("Clean the house", "🧹", WEEKEND, 12, 0.7f),
+                    // Skipped often enough to show a streak surviving one: a weekend away.
+                    Sample("Clean the house", "🧹", WEEKEND, 12, 0.7f, skipRate = 0.15f),
                     // Logged in pages: a wide spread, so the chart's bars differ noticeably.
                     Sample(
                         "Read",

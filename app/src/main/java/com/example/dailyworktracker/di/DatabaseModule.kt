@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.example.dailyworktracker.data.local.AppDatabase
 import com.example.dailyworktracker.data.local.dao.HabitCompletionDao
 import com.example.dailyworktracker.data.local.dao.HabitDao
+import com.example.dailyworktracker.data.local.dao.HabitSkipDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,7 +25,11 @@ object DatabaseModule {
         Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
             // No destructive fallback: losing a user's habit history on upgrade is never the
             // right answer, so every version bump must ship a migration.
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
+            .addMigrations(
+                AppDatabase.MIGRATION_1_2,
+                AppDatabase.MIGRATION_2_3,
+                AppDatabase.MIGRATION_3_4,
+            )
             .build()
 
     @Provides
@@ -32,4 +37,7 @@ object DatabaseModule {
 
     @Provides
     fun provideHabitCompletionDao(database: AppDatabase): HabitCompletionDao = database.habitCompletionDao()
+
+    @Provides
+    fun provideHabitSkipDao(database: AppDatabase): HabitSkipDao = database.habitSkipDao()
 }

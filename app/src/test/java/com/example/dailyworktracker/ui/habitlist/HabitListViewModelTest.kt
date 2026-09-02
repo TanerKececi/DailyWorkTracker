@@ -544,4 +544,92 @@ class HabitListViewModelTest {
 
             assertEquals(listOf(monday.minusDays(1)), repository.skipsFor(1L))
         }
+
+    @Test
+    fun `the list is grouped into in progress, done and skipped, in that order`() =
+        runTest {
+            repository.seed(
+                oldHabit(id = 1L, title = "Still to do"),
+                oldHabit(id = 2L, title = "Finished"),
+                oldHabit(id = 3L, title = "Passed on"),
+            )
+            repository.completeOn(2L, monday)
+            repository.skipOn(3L, monday)
+
+            viewModel().uiState.test {
+                assertEquals(HabitListDisplayState.Loading, awaitItem().displayState)
+                val rows = (awaitItem().displayState as Content).rows
+
+                // A header is followed by its own habits, so the list reads as sections rather
+                // than as a heading block with everything underneath it.
+                assertEquals(
+                    listOf(
+                        HabitSection.IN_PROGRESS to null,
+                        null to "Still to do",
+                        HabitSection.DONE to null,
+                        null to "Finished",
+                        HabitSection.SKIPPED to null,
+                        null to "Passed on",
+                    ),
+                    rows.map { row ->
+                        when (row) {
+                            is HabitListRow.Header -> row.section to null
+                            is HabitListRow.Habit -> null to row.item.title
+                        }
+                    },
+                )
+                assertTrue(rows.filterIsInstance<HabitListRow.Header>().all { it.count == 1 })
+            }
+        }
+
+    @Test
+    fun `a section with nothing in it is left out entirely`() =
+        runTest {
+            // A header reading "Done (0)" is noise: the count is the whole point of the heading.
+            repository.seed(oldHabit(id = 1L, title = "Still to do"))
+
+            viewModel().uiState.test {
+                assertEquals(HabitListDisplayState.Loading, awaitItem().displayState)
+                val rows = (awaitItem().displayState as Content).rows
+
+                assertEquals(
+                    listOf(HabitSection.IN_PROGRESS),
+                    rows.filterIsInstance<HabitListRow.Header>().map { it.section },
+                )
+            }
+        }
+
+    @Test
+    fun `an amount habit with anything logged counts as done`() =
+        runTest {
+            // The rule everywhere else: any amount at all completes the day, there is no target.
+            repository.seed(oldHabit(id = 1L, title = "Read"))
+            repository.setAmount(habitId = 1L, date = monday, amount = 1)
+
+            viewModel().uiState.test {
+                assertEquals(HabitListDisplayState.Loading, awaitItem().displayState)
+                val rows = (awaitItem().displayState as Content).rows
+
+                assertEquals(
+                    listOf(HabitSection.DONE),
+                    rows.filterIsInstance<HabitListRow.Header>().map { it.section },
+                )
+            }
+        }
+
+    @Test
+    fun `ticking a habit moves it from in progress to done`() =
+        runTest {
+            repository.seed(oldHabit(id = 1L, title = "Brush teeth"))
+            val viewModel = subscribed()
+
+            viewModel.onHabitCheckedChanged(habitId = 1L)
+            runCurrent()
+
+            val rows = (viewModel.uiState.value.displayState as Content).rows
+            assertEquals(
+                listOf(HabitSection.DONE),
+                rows.filterIsInstance<HabitListRow.Header>().map { it.section },
+            )
+        }
 }

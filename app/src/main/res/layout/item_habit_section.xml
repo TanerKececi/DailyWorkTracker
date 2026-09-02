@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  A section heading in the habit list: "In progress (2)".
+
+  The count is part of the heading rather than a badge, because it is what makes the heading worth
+  reading at a glance - and it is why an empty section is left out entirely.
+-->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/textSection"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="20dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="4dp"
+    android:textAppearance="?attr/textAppearanceTitleSmall"
+    android:textColor="?attr/colorOnSurfaceVariant"
+    tools:text="In progress (2)" />

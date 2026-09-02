@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  The bottom bar's Add action: a filled disc with a plus punched out of it.
+
+  Drawn as one vector rather than a docked FloatingActionButton. A real FAB would mean replacing
+  the BottomNavigationView with a BottomAppBar and rebuilding tab selection around it - a lot of
+  moving parts for an appearance. A single icon gets the same emphasis and leaves the bar alone.
+
+  Disc and plus are one path with evenOdd fill, so the plus is a hole rather than a second colour.
+  That matters because the bar tints every icon from one colour state list: a two-tone icon would
+  come out as a flat disc with the plus tinted away.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:fillType="evenOdd"
+        android:pathData="M12,1a11,11 0 1,0 0,22a11,11 0 1,0 0,-22zM17,11h-4V7h-2v4H7v2h4v4h2v-4h4z" />
+</vector>

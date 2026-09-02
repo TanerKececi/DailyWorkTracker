@@ -8,6 +8,7 @@ import com.example.dailyworktracker.data.model.timeOfDay
 import com.example.dailyworktracker.data.model.toGoal
 import com.example.dailyworktracker.data.repository.HabitRepository
 import com.example.dailyworktracker.util.DateProvider
+import com.example.dailyworktracker.util.HabitVisibility
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -66,6 +68,16 @@ class HabitListViewModel
             timeFilter.value = null
         }
 
+        /**
+         * The oldest habit's creation date, or null before any habit exists.
+         *
+         * Archived habits count: their history is still browsable, so the strip has to reach back
+         * far enough to show it.
+         */
+        private val earliestHabitDate =
+            repository.observeAllHabits()
+                .map { habits -> habits.minOfOrNull(HabitVisibility::createdDate) }
+
         val uiState: StateFlow<HabitListScreenState> =
             selectedDate
                 .flatMapLatest { date ->
@@ -74,7 +86,8 @@ class HabitListViewModel
                         repository.observeActiveHabitCount(),
                         today,
                         timeFilter,
-                    ) { habits, activeHabitCount, currentToday, filter ->
+                        earliestHabitDate,
+                    ) { habits, activeHabitCount, currentToday, filter, earliest ->
                         // Exact match, so a habit tied to no particular time shows only under
                         // "all day". Letting those through every filter would put most of the
                         // list behind every chip and leave the filter saying nothing.
@@ -83,6 +96,9 @@ class HabitListViewModel
                         HabitListScreenState(
                             selectedDate = date,
                             today = currentToday,
+                            // No habits yet means nothing to scroll back through, so the strip is
+                            // just today rather than an arbitrary window of empty days.
+                            firstDate = earliest ?: currentToday,
                             timeFilter = filter,
                             displayState =
                                 when {

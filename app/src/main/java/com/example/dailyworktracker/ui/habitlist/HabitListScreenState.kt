@@ -19,10 +19,25 @@ import java.time.LocalDate
 data class HabitListScreenState(
     val selectedDate: LocalDate,
     val today: LocalDate,
+    /**
+     * The first day the strip can scroll back to: the oldest habit's creation date.
+     *
+     * Everything the app has history for is therefore reachable by scrolling, which is what lets
+     * the date bar drop its arrows without losing the ability to backfill.
+     */
+    val firstDate: LocalDate = today,
     /** Which part of the day the list is filtered to; null is "all day". */
     val timeFilter: TimeOfDay? = null,
     val displayState: HabitListDisplayState,
 ) {
+    /**
+     * The date strip, oldest first so it reads left to right and ends on today.
+     *
+     * Built once per state rather than in a getter: the layout binds it, and a getter would rebuild
+     * the whole range on every bind.
+     */
+    val days: List<DayChip> = buildDays(firstDate, selectedDate, today)
+
     /** Future days cannot be completed, so stepping forward stops at today. */
     val canGoToNextDay: Boolean get() = selectedDate.isBefore(today)
 
@@ -67,6 +82,26 @@ data class HabitListScreenState(
                 HabitListDisplayState.NothingAtThisTime -> R.string.habit_list_nothing_at_time_message
                 else -> null
             }
+}
+
+/**
+ * Every day from [firstDate] through [today], inclusive.
+ *
+ * Clamped so the range can never be empty or run backwards: an app with no habits still shows
+ * today, because an empty strip would be a blank row rather than an honest "nothing yet".
+ */
+private fun buildDays(
+    firstDate: LocalDate,
+    selectedDate: LocalDate,
+    today: LocalDate,
+): List<DayChip> {
+    val start = minOf(firstDate, today)
+    return generateSequence(start) { it.plusDays(1) }
+        .takeWhile { !it.isAfter(today) }
+        .map { date ->
+            DayChip(date = date, isSelected = date == selectedDate, isToday = date == today)
+        }
+        .toList()
 }
 
 /**

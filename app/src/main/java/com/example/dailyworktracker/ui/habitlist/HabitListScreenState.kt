@@ -38,12 +38,6 @@ data class HabitListScreenState(
      */
     val days: List<DayChip> = buildDays(firstDate, selectedDate, today)
 
-    /** Future days cannot be completed, so stepping forward stops at today. */
-    val canGoToNextDay: Boolean get() = selectedDate.isBefore(today)
-
-    /** Only shown off today, where it is the fastest way back. */
-    val showJumpToToday: Boolean get() = selectedDate != today
-
     /*
      * Flat accessors below exist for XML only. Binding expressions have no `when` and no
      * smart-casting, so without these the layout would need Java-style casts. Kotlin callers -

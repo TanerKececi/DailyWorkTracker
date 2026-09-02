@@ -133,23 +133,16 @@ class HabitListViewModel
                 displayState = displayState,
             )
 
-        fun onPreviousDayClicked() {
-            select(selectedDate.value.minusDays(1))
-        }
-
-        fun onNextDayClicked() {
-            // Guarded here as well as in the view: the future is never completable.
-            if (selectedDate.value.isBefore(dateProvider.today())) {
-                select(selectedDate.value.plusDays(1))
-            }
-        }
-
-        fun onTodayClicked() {
-            select(dateProvider.today())
-        }
-
+        /**
+         * The only way the day changes, whether from the strip or the picker.
+         *
+         * There used to be step-back, step-forward and jump-to-today alongside this, for the date
+         * bar's chevrons. The strip replaced them: every day is now reachable directly, so a
+         * separate way to move one day at a time had nothing left to do.
+         */
         fun onDatePicked(date: LocalDate) {
-            // Guard the picker as well as the chevron: neither may select the future.
+            // The future is never completable, so a selection past today is clamped rather than
+            // refused: the strip cannot offer one, but the picker and a stale state could.
             select(minOf(date, dateProvider.today()))
         }
 

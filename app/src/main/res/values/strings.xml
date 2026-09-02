@@ -22,10 +22,7 @@
     <!-- Date navigation -->
     <string name="date_today">Today</string>
     <string name="date_yesterday">Yesterday</string>
-    <string name="date_previous_day">Previous day</string>
-    <string name="date_next_day">Next day</string>
     <string name="date_pick_day">Pick a day</string>
-    <string name="date_jump_to_today">Today</string>
     <string name="date_picker_title">Select a day</string>
     <string name="habit_list_error_title">Something went wrong</string>
     <string name="habit_list_more_options">More options for %1$s</string>
@@ -44,7 +41,6 @@
     <string name="habit_archived_message">%1$s archived</string>
     <string name="habit_restored_message">%1$s restored</string>
     <!-- Swiping a row left marks the day as deliberately skipped rather than missed -->
-    <string name="habit_action_skip">Skip</string>
     <string name="habit_skipped_message">%1$s skipped for this day</string>
     <string name="habit_unskipped_message">%1$s no longer skipped</string>
     <string name="habit_skip_undo">Undo</string>

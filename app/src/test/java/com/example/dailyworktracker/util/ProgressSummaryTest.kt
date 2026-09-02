@@ -174,4 +174,41 @@ class ProgressSummaryTest {
             ProgressSummary.dayStatus(listOf(habitMonth()), monday.plusDays(1), today = monday),
         )
     }
+
+    @Test
+    fun `a day reports the share of what was due that was done`() {
+        // The calendar draws each day as a ring, so it needs the proportion, not just a state.
+        val date = LocalDate.of(2026, 8, 10)
+        val habits =
+            listOf(
+                habitMonth(id = 1L, completed = setOf(date)),
+                habitMonth(id = 2L, completed = setOf(date)),
+                habitMonth(id = 3L),
+                habitMonth(id = 4L),
+            )
+
+        assertEquals(0.5f, ProgressSummary.dayFraction(habits, date), 0.001f)
+    }
+
+    @Test
+    fun `a day nothing was owed on reports no progress rather than full`() {
+        // Zero of zero is not 100%: an empty ring is the honest drawing for a day off.
+        val tuesday = LocalDate.of(2026, 8, 11)
+        val mondayOnly = WeekdaySchedule.toBitmask(listOf(DayOfWeek.MONDAY))
+
+        assertEquals(0f, ProgressSummary.dayFraction(listOf(habitMonth(schedule = mondayOnly)), tuesday), 0f)
+    }
+
+    @Test
+    fun `a skipped habit is left out of the day's share, not counted as unfinished`() {
+        // One habit due and kept, one skipped: a full ring, because nothing was left owing.
+        val date = LocalDate.of(2026, 8, 10)
+        val habits =
+            listOf(
+                habitMonth(id = 1L, completed = setOf(date)),
+                habitMonth(id = 2L, skipped = setOf(date)),
+            )
+
+        assertEquals(1f, ProgressSummary.dayFraction(habits, date), 0.001f)
+    }
 }

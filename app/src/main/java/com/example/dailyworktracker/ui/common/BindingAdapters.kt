@@ -281,15 +281,15 @@ fun TextView.setTotalAmount(
 }
 
 /**
- * Writes a month as "August", or "August 2025" once it falls outside the current year.
+ * Writes a month as "Jul 2024".
  *
  * Formatted here rather than in the ViewModel for the usual reason: naming a month needs a Locale,
- * which belongs to the view layer. The year is dropped in the common case so the stepper reads as a
- * heading rather than a date.
+ * which belongs to the view layer. The year is always shown, because the stepper walks backwards
+ * without limit and a bare month name would quietly claim to be this year's.
  */
 @BindingAdapter("monthLabel")
 fun TextView.setMonthLabel(month: YearMonth?) {
     if (month == null) return
-    val name = month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
-    text = if (month.year == LocalDate.now().year) name else "$name ${month.year}"
+    val name = month.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+    text = "$name ${month.year}"
 }

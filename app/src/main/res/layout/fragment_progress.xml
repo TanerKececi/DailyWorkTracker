@@ -47,59 +47,14 @@
                 android:orientation="vertical">
 
                 <!--
-                  The month stepper, following the habit list's date bar: the buttons are wired in
-                  the layout, and the next one is disabled rather than hidden so the row keeps its
-                  shape at the current month.
-                -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="8dp">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/buttonPreviousMonth"
-                        style="@style/Widget.Material3.Button.IconButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:contentDescription="@string/progress_previous_month"
-                        android:onClick="@{() -> viewModel.onPreviousMonthClicked()}"
-                        app:icon="@drawable/ic_chevron_left" />
-
-                    <TextView
-                        android:id="@+id/textMonth"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
-                        android:textColor="?attr/colorPrimary"
-                        app:monthLabel="@{state.month}"
-                        tools:text="August" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/buttonNextMonth"
-                        style="@style/Widget.Material3.Button.IconButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:contentDescription="@string/progress_next_month"
-                        android:enabled="@{state.canGoToNextMonth}"
-                        android:onClick="@{() -> viewModel.onNextMonthClicked()}"
-                        app:icon="@drawable/ic_chevron_right" />
-
-                </LinearLayout>
-
-                <!--
                   Click, not checked-change: the checked state is bound from the state, and a change
                   listener would fire while that binding is applied and echo straight back.
                 -->
                 <com.google.android.material.button.MaterialButtonToggleGroup
                     android:id="@+id/groupProgressMode"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginHorizontal="16dp"
                     app:selectionRequired="true"
                     app:singleSelection="true"
                     app:visibleIf="@{state.showsToggle}">
@@ -107,8 +62,9 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonModeSummary"
                         style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:checked="@{state.summaryMode}"
                         android:onClick="@{() -> viewModel.onModeSelected(ProgressMode.SUMMARY)}"
                         android:text="@string/progress_mode_summary" />
@@ -116,8 +72,9 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonModeHabits"
                         style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:checked="@{state.habitsMode}"
                         android:onClick="@{() -> viewModel.onModeSelected(ProgressMode.HABITS)}"
                         android:text="@string/progress_mode_habits" />
@@ -132,11 +89,20 @@
                     android:orientation="vertical"
                     app:visibleIf="@{state.showsCalendar}">
 
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginTop="20dp"
+                        android:text="@string/progress_rate_label"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
                     <FrameLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="24dp">
+                        android:layout_marginTop="12dp">
 
                         <com.google.android.material.progressindicator.CircularProgressIndicator
                             android:id="@+id/progressRing"
@@ -145,9 +111,9 @@
                             android:layout_gravity="center"
                             android:max="100"
                             android:progress="@{state.percent}"
-                            app:indicatorSize="168dp"
-                            app:trackCornerRadius="8dp"
-                            app:trackThickness="14dp"
+                            app:indicatorSize="112dp"
+                            app:trackCornerRadius="6dp"
+                            app:trackThickness="8dp"
                             tools:progress="77" />
 
                         <TextView
@@ -156,27 +122,61 @@
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
                             android:text="@{@string/progress_habit_rate(state.percent)}"
-                            android:textAppearance="?attr/textAppearanceHeadlineLarge"
+                            android:textAppearance="?attr/textAppearanceTitleLarge"
                             tools:text="77%" />
 
                     </FrameLayout>
 
-                    <TextView
+                    <!--
+                      The month stepper sits with the calendar it drives, below the ring: the ring
+                      is the headline and the calendar is the detail behind it.
+                    -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center"
-                        android:text="@string/progress_rate_label"
-                        android:textAppearance="?attr/textAppearanceBodySmall"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
+                        android:layout_marginTop="20dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="8dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/buttonPreviousMonth"
+                            style="@style/Widget.Material3.Button.IconButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="@string/progress_previous_month"
+                            android:onClick="@{() -> viewModel.onPreviousMonthClicked()}"
+                            app:icon="@drawable/ic_chevron_left" />
+
+                        <TextView
+                            android:id="@+id/textMonth"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            app:monthLabel="@{state.month}"
+                            tools:text="Jul 2024" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/buttonNextMonth"
+                            style="@style/Widget.Material3.Button.IconButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="@string/progress_next_month"
+                            android:enabled="@{state.canGoToNextMonth}"
+                            android:onClick="@{() -> viewModel.onNextMonthClicked()}"
+                            app:icon="@drawable/ic_chevron_right" />
+
+                    </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/rowCalendarWeekdays"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="24dp"
-                        android:paddingHorizontal="12dp"
-                        android:orientation="horizontal" />
+                        android:layout_marginTop="4dp"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="12dp" />
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recyclerCalendar"
@@ -185,17 +185,9 @@
                         android:layout_marginTop="4dp"
                         android:nestedScrollingEnabled="false"
                         android:paddingHorizontal="12dp"
-                        app:items="@{state.days}"
                         tools:itemCount="35"
-                        tools:listitem="@layout/item_calendar_day" />
-
-                    <include
-                        android:id="@+id/legendCalendar"
-                        layout="@layout/view_heatmap_legend"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="16dp" />
+                        tools:listitem="@layout/item_calendar_day"
+                        app:items="@{state.days}" />
 
                 </LinearLayout>
 

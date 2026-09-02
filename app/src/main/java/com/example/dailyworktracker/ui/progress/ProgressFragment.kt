@@ -1,6 +1,5 @@
 package com.example.dailyworktracker.ui.progress
 
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -16,7 +15,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.databinding.FragmentProgressBinding
 import com.example.dailyworktracker.ui.common.viewBinding
-import com.example.dailyworktracker.ui.habitdetail.HeatmapAdapter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -50,7 +48,6 @@ class ProgressFragment : Fragment(R.layout.fragment_progress) {
         binding.recyclerCalendar.adapter = calendarAdapter
         binding.recyclerProgressHabits.adapter = habitAdapter
         addWeekdayHeader()
-        tintLegend()
         observeUiState()
     }
 
@@ -82,17 +79,6 @@ class ProgressFragment : Fragment(R.layout.fragment_progress) {
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelSmall)
         }
-
-    /** Tinted from the heatmap's own helpers, so the key always matches the boxes both grids draw. */
-    private fun tintLegend() {
-        val context = requireContext()
-        binding.legendCalendar.swatchDone.backgroundTintList =
-            ColorStateList.valueOf(HeatmapAdapter.completedTint(context))
-        binding.legendCalendar.swatchMissed.backgroundTintList =
-            ColorStateList.valueOf(HeatmapAdapter.missedTint(context))
-        binding.legendCalendar.swatchSkipped.backgroundTintList =
-            ColorStateList.valueOf(HeatmapAdapter.skippedTint(context))
-    }
 
     /**
      * The layout renders itself from the state; this only hands each new value over.

@@ -13,4 +13,11 @@ import java.time.LocalDate
 data class CalendarDay(
     val date: LocalDate?,
     val status: DayStatus,
+    /**
+     * Share of that day's due habits that were done, in `0f..1f`.
+     *
+     * The cell is drawn as a ring, so it shows how much of the day was kept rather than only
+     * whether it was. [status] still decides the colour and the special cases.
+     */
+    val fraction: Float = 0f,
 )

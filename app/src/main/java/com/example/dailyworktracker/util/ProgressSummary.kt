@@ -78,6 +78,25 @@ object ProgressSummary {
     ): Float = completionRate(listOf(habit), month, today)
 
     /**
+     * Share of that day's due habits that were done, in `0f..1f`.
+     *
+     * The calendar draws a day as a ring rather than a filled box, so it needs the proportion and
+     * not only the state. Judged over the same set of habits [dayStatus] uses: one that was not due,
+     * did not exist yet, or was skipped is owed nothing and counts neither way.
+     *
+     * A day with nothing owed reports 0, not 1. Zero of zero drawn as a full ring would claim
+     * credit for a day off.
+     */
+    fun dayFraction(
+        habits: List<HabitMonth>,
+        date: LocalDate,
+    ): Float {
+        val due = habits.filter { it.owesSomethingOn(date) }
+        if (due.isEmpty()) return 0f
+        return due.count { date in it.completed }.toFloat() / due.size
+    }
+
+    /**
      * How one calendar cell should be drawn, given every habit that was due that day.
      *
      * A day is judged only on the habits that actually owed something: one that does not repeat
@@ -91,12 +110,7 @@ object ProgressSummary {
     ): DayStatus {
         if (date.isAfter(today)) return DayStatus.OUT_OF_RANGE
 
-        val due =
-            habits.filter { habit ->
-                !date.isBefore(habit.createdOn) &&
-                    WeekdaySchedule.isScheduledOn(habit.scheduleDaysBitmask, date.dayOfWeek) &&
-                    date !in habit.skipped
-            }
+        val due = habits.filter { it.owesSomethingOn(date) }
 
         if (due.isEmpty()) {
             // Nothing was owed. Skipped only where a habit was genuinely due and passed on, so a
@@ -119,4 +133,15 @@ object ProgressSummary {
             else -> DayStatus.MISSED
         }
     }
+
+    /**
+     * Whether this habit actually owed something on [date].
+     *
+     * The single definition of "due", so the ring and the status can never disagree about which
+     * habits a day is being judged on.
+     */
+    private fun HabitMonth.owesSomethingOn(date: LocalDate): Boolean =
+        !date.isBefore(createdOn) &&
+            WeekdaySchedule.isScheduledOn(scheduleDaysBitmask, date.dayOfWeek) &&
+            date !in skipped
 }

@@ -1,20 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-  One day in the month grid.
+  One day in the month grid, drawn as a ring around its date.
 
-  The root fills its whole column so the seven columns tile evenly; the box inside is a fixed
-  square, keeping the grid regular across screen widths.
+  A ring rather than a filled box because a day here covers several habits at once: it shows how
+  much of the day was kept, not just whether it was. The detail heatmap keeps its boxes, where a
+  single habit's day really is one thing or the other.
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="3dp">
+    android:paddingVertical="4dp">
 
     <FrameLayout
         android:id="@+id/viewCell"
-        android:layout_width="34dp"
-        android:layout_height="34dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:layout_gravity="center">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/ringDay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:max="100"
+            app:indicatorSize="34dp"
+            app:trackCornerRadius="2dp"
+            app:trackThickness="3dp"
+            tools:progress="60" />
 
         <TextView
             android:id="@+id/textDay"

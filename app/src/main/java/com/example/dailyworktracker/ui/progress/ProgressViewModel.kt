@@ -141,7 +141,11 @@ class ProgressViewModel
             return List(leadingBlanks) { CalendarDay(date = null, status = DayStatus.OUT_OF_RANGE) } +
                 (1..shownMonth.lengthOfMonth()).map { dayOfMonth ->
                     val date = shownMonth.atDay(dayOfMonth)
-                    CalendarDay(date, ProgressSummary.dayStatus(habits, date, today))
+                    CalendarDay(
+                        date = date,
+                        status = ProgressSummary.dayStatus(habits, date, today),
+                        fraction = ProgressSummary.dayFraction(habits, date),
+                    )
                 }
         }
 

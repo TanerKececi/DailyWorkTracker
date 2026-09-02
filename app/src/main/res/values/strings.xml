@@ -88,6 +88,9 @@
 
     <!-- All habits -->
     <string name="all_habits_title">All habits</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
     <string name="all_habits_archived_badge">Archived</string>
     <!-- Schedule line once a reminder is set, e.g. "Mon, Wed, Fri · ⏰ 08:00" -->
     <string name="all_habits_schedule_with_reminder">%1$s · ⏰ %2$s</string>

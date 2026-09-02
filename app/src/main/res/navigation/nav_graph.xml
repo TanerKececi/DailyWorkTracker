@@ -73,4 +73,9 @@
 
     </dialog>
 
+    <!-- Global: the bottom bar's + opens the sheet from whichever tab is showing. -->
+    <action
+        android:id="@+id/action_global_addEditHabit"
+        app:destination="@id/addEditHabitFragment" />
+
 </navigation>

@@ -91,6 +91,12 @@
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
+
+    <!-- Bottom navigation tab labels; kept short so all of them fit on a narrow screen -->
+    <string name="nav_home">Home</string>
+    <string name="nav_my_habits">My habits</string>
+    <string name="nav_add_habit">Add</string>
+    <string name="nav_settings">Settings</string>
     <string name="all_habits_archived_badge">Archived</string>
     <!-- Schedule line once a reminder is set, e.g. "Mon, Wed, Fri · ⏰ 08:00" -->
     <string name="all_habits_schedule_with_reminder">%1$s · ⏰ %2$s</string>

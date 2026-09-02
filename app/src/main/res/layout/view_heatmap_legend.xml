@@ -52,6 +52,25 @@
             android:textColor="?attr/colorOnSurfaceVariant"
             tools:ignore="TextContrastCheck" />
 
+        <!-- Filled like a done day, not outlined like a missed one: a skip is handled, not failed. -->
+        <View
+            android:id="@+id/swatchSkipped"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/bg_heatmap_day_filled"
+            android:importantForAccessibility="no" />
+
+        <TextView
+            android:id="@+id/labelSkipped"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="@string/habit_detail_legend_skipped"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:ignore="TextContrastCheck" />
+
     </LinearLayout>
 
 </layout>

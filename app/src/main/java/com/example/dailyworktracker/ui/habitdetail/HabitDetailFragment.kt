@@ -75,6 +75,8 @@ class HabitDetailFragment : Fragment(R.layout.fragment_habit_detail) {
             ColorStateList.valueOf(HeatmapAdapter.completedTint(context))
         binding.legendHeatmap.swatchMissed.backgroundTintList =
             ColorStateList.valueOf(HeatmapAdapter.missedTint(context))
+        binding.legendHeatmap.swatchSkipped.backgroundTintList =
+            ColorStateList.valueOf(HeatmapAdapter.skippedTint(context))
     }
 
     /** Equal-weight so the header divides into the same columns as the grid below it. */

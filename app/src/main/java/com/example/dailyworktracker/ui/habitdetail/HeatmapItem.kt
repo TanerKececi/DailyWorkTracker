@@ -1,25 +1,8 @@
 package com.example.dailyworktracker.ui.habitdetail
 
+import com.example.dailyworktracker.ui.common.DayStatus
 import java.time.LocalDate
 import java.time.YearMonth
-
-/** How a single day should be drawn in the history grid. */
-enum class DayStatus {
-    /** Due that day and done: a ticked box. */
-    COMPLETED,
-
-    /** Due that day and missed: an empty box. Only assigned to days that have already resolved. */
-    MISSED,
-
-    /** The habit does not repeat on that weekday, so no box is drawn at all. */
-    NOT_SCHEDULED,
-
-    /** Due today and not done yet. Distinct from [MISSED]: the day has not resolved. */
-    PENDING,
-
-    /** Before the habit existed, or later than today. Drawn as an empty slot. */
-    OUT_OF_RANGE,
-}
 
 /**
  * One slot in the history grid.

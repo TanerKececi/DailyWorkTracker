@@ -9,6 +9,7 @@ import com.example.dailyworktracker.fake.FakeDateProvider
 import com.example.dailyworktracker.fake.FakeHabitRepository
 import com.example.dailyworktracker.fake.habit
 import com.example.dailyworktracker.testing.MainDispatcherRule
+import com.example.dailyworktracker.ui.common.DayStatus
 import com.example.dailyworktracker.ui.habitdetail.HabitDetailDisplayState.Content
 import com.example.dailyworktracker.util.WeekdaySchedule
 import kotlinx.coroutines.test.runTest
@@ -392,5 +393,18 @@ class HabitDetailViewModelTest {
             repository.skipOn(1L, monday.minusDays(3))
 
             assertEquals(1f, awaitDetail().completionRate, 0.001f)
+        }
+
+    @Test
+    fun `a skipped day is marked skipped rather than missed`() =
+        runTest {
+            // The Records tiles already treat a skip as neutral. A red box under them saying the
+            // opposite about the same day is the inconsistency this closes.
+            repository.seed(habit(id = 1L, createdAt = 0L))
+            repository.skipOn(1L, monday.minusDays(2))
+
+            val day = awaitDays().single { it.date == monday.minusDays(2) }
+
+            assertEquals(DayStatus.SKIPPED, day.status)
         }
 }

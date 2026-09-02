@@ -75,6 +75,7 @@
     </plurals>
     <string name="habit_detail_legend_missed">Missed</string>
     <string name="habit_detail_legend_done">Done</string>
+    <string name="habit_detail_legend_skipped">Skipped</string>
 
     <!-- Home screen widget -->
     <string name="widget_description">Habits due today, ticked off from the home screen.</string>

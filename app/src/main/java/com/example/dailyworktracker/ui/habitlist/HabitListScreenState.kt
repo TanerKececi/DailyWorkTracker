@@ -43,7 +43,7 @@ data class HabitListScreenState(
 
     val isEmpty: Boolean get() = emptyTitleRes != null
 
-    val habits: List<HabitListItemUiModel> get() = displayState.habits
+    val rows: List<HabitListRow> get() = displayState.rows
 
     val errorMessage: String?
         get() = (displayState as? HabitListDisplayState.Error)?.throwable?.localizedMessage
@@ -79,7 +79,17 @@ data class HabitListScreenState(
 sealed interface HabitListDisplayState {
     data object Loading : HabitListDisplayState
 
-    data class Content(override val habits: List<HabitListItemUiModel>) : HabitListDisplayState
+    /**
+     * The day's habits, grouped into sections.
+     *
+     * [habits] is kept beside [rows] because most callers - and every test about a habit's own
+     * state - care about the habits themselves and not about which heading they landed under.
+     */
+    data class Content(
+        override val habits: List<HabitListItemUiModel>,
+    ) : HabitListDisplayState {
+        override val rows: List<HabitListRow> = groupIntoSections(habits)
+    }
 
     /** Habits exist, but none is scheduled for the selected day. */
     data object NothingScheduled : HabitListDisplayState
@@ -94,4 +104,36 @@ sealed interface HabitListDisplayState {
 
     /** Empty in every state but [Content], so the list can bind without the layout branching. */
     val habits: List<HabitListItemUiModel> get() = emptyList()
+
+    val rows: List<HabitListRow> get() = emptyList()
+}
+
+/**
+ * Splits the day's habits into In progress, Done and Skipped, each behind its own heading.
+ *
+ * A section with nothing in it is left out rather than shown empty: the heading carries a count, so
+ * "Done (0)" would be a line of noise saying what the absence already says.
+ *
+ * Order within a section is the order the repository gave, so grouping never quietly re-sorts the
+ * list underneath the user.
+ */
+private fun groupIntoSections(habits: List<HabitListItemUiModel>): List<HabitListRow> {
+    val bySection =
+        habits.groupBy { habit ->
+            when {
+                habit.isSkipped -> HabitSection.SKIPPED
+                habit.isCompleted -> HabitSection.DONE
+                else -> HabitSection.IN_PROGRESS
+            }
+        }
+
+    // Iterating the enum rather than the map keeps the sections in their declared order.
+    return HabitSection.entries.flatMap { section ->
+        val inSection = bySection[section].orEmpty()
+        if (inSection.isEmpty()) {
+            emptyList()
+        } else {
+            listOf(HabitListRow.Header(section, inSection.size)) + inSection.map(HabitListRow::Habit)
+        }
+    }
 }

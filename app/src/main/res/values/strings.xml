@@ -32,6 +32,11 @@
     <!-- No "today": the same row is used when reviewing a past day. -->
     <string name="habit_completed_checkbox">Mark %1$s as done</string>
 
+    <!-- Section headings on the habit list; the count is what makes an empty section worth hiding -->
+    <string name="habit_list_section_in_progress">In progress (%1$d)</string>
+    <string name="habit_list_section_done">Done (%1$d)</string>
+    <string name="habit_list_section_skipped">Skipped (%1$d)</string>
+
     <!-- Habit row actions -->
     <string name="habit_action_edit">Edit</string>
     <string name="habit_action_archive">Archive</string>

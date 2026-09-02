@@ -33,6 +33,12 @@ class SkipSwipeCallback(
         target: RecyclerView.ViewHolder,
     ): Boolean = false
 
+    /** A section heading has no day to skip, so it does not move under the finger at all. */
+    override fun getSwipeDirs(
+        recyclerView: RecyclerView,
+        viewHolder: RecyclerView.ViewHolder,
+    ): Int = if (rowAt(viewHolder) is HabitListRow.Habit) super.getSwipeDirs(recyclerView, viewHolder) else 0
+
     // Out of reach on purpose: see the class comment. Distance and flick speed both have to miss.
     override fun getSwipeThreshold(viewHolder: RecyclerView.ViewHolder): Float = Float.MAX_VALUE
 
@@ -61,11 +67,16 @@ class SkipSwipeCallback(
         if (!isFarEnough) return
         isFarEnough = false
 
-        val adapter = viewHolder.bindingAdapter as? HabitListAdapter ?: return
-        val position = viewHolder.bindingAdapterPosition
-        if (position == RecyclerView.NO_POSITION) return
+        val row = rowAt(viewHolder) as? HabitListRow.Habit ?: return
+        onSkipSwiped(row.item)
+    }
 
-        onSkipSwiped(adapter.currentList[position])
+    /** Null when the holder has no current position, which happens mid-update. */
+    private fun rowAt(viewHolder: RecyclerView.ViewHolder): HabitListRow? {
+        val adapter = viewHolder.bindingAdapter as? HabitListAdapter ?: return null
+        val position = viewHolder.bindingAdapterPosition
+        if (position == RecyclerView.NO_POSITION) return null
+        return adapter.currentList.getOrNull(position)
     }
 
     override fun onChildDraw(

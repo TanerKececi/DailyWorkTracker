@@ -169,7 +169,7 @@
             android:clipToPadding="false"
             android:paddingTop="8dp"
             android:paddingBottom="96dp"
-            app:items="@{state.habits}"
+            app:items="@{state.rows}"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
             app:visibleIf="@{state.content}"

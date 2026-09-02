@@ -119,4 +119,51 @@ class StreakCalculatorTest {
             StreakCalculator.longestStreak(emptySet(), WeekdaySchedule.EVERY_DAY, monday),
         )
     }
+
+    @Test
+    fun `a skipped day does not break the streak`() {
+        // The whole point of the feature: a deliberate rest day is not a failure. Without this the
+        // user is better off never marking anything, which is what not ticking already does.
+        val completed = daysBefore(0, 2)
+
+        assertEquals(
+            2,
+            StreakCalculator.currentStreak(
+                completed,
+                WeekdaySchedule.EVERY_DAY,
+                monday,
+                skippedDates = daysBefore(1),
+            ),
+        )
+    }
+
+    @Test
+    fun `a skipped day does not itself count towards the streak`() {
+        // Neutral means neutral: it is passed over like an unscheduled day, not credited as done.
+        assertEquals(
+            1,
+            StreakCalculator.currentStreak(
+                daysBefore(0),
+                WeekdaySchedule.EVERY_DAY,
+                monday,
+                skippedDates = daysBefore(1, 2, 3),
+            ),
+        )
+    }
+
+    @Test
+    fun `a skipped day does not break the longest streak either`() {
+        // The two calculators have to agree, or the detail screen contradicts itself.
+        val completed = daysBefore(1, 3)
+
+        assertEquals(
+            2,
+            StreakCalculator.longestStreak(
+                completed,
+                WeekdaySchedule.EVERY_DAY,
+                monday,
+                skippedDates = daysBefore(2),
+            ),
+        )
+    }
 }

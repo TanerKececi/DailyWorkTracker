@@ -4,7 +4,6 @@ import android.content.Intent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.dailyworktracker.MainActivity
-import com.example.dailyworktracker.data.local.dao.HabitDao
 import com.example.dailyworktracker.data.local.entity.Habit
 import com.example.dailyworktracker.data.model.HabitGoal
 import com.example.dailyworktracker.data.model.HabitUnit
@@ -15,7 +14,6 @@ import com.example.dailyworktracker.util.WeekdaySchedule
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.runBlocking
-import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -43,23 +41,19 @@ class HabitWidgetActionReceiverTest {
     lateinit var repository: HabitRepository
 
     @Inject
-    lateinit var habitDao: HabitDao
-
-    @Inject
     lateinit var dateProvider: DateProvider
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
 
+    /**
+     * No cleanup: `TestDatabaseModule` gives each test its own in-memory database. This test used
+     * to empty the habits table before and after itself, which worked only because it was emptying
+     * the real one on the device.
+     */
     @Before
     fun setUp() {
         hiltRule.inject()
-        runBlocking { habitDao.deleteAll() }
-    }
-
-    @After
-    fun tearDown() {
-        runBlocking { habitDao.deleteAll() }
     }
 
     @Test

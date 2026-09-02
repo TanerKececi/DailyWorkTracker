@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      The tab ids deliberately match destination ids: that is how NavigationUI binds a bar item to
+      a destination without any mapping table of its own.
+    -->
+    <item
+        android:id="@+id/habitListFragment"
+        android:icon="@drawable/ic_home"
+        android:title="@string/nav_home" />
+    <item
+        android:id="@+id/allHabitsFragment"
+        android:icon="@drawable/ic_list"
+        android:title="@string/nav_my_habits" />
+    <!-- Not a destination: opens the add sheet and never becomes the selected tab. -->
+    <item
+        android:id="@+id/action_add_habit"
+        android:icon="@drawable/ic_add"
+        android:title="@string/nav_add_habit" />
+    <item
+        android:id="@+id/settingsFragment"
+        android:icon="@drawable/ic_settings"
+        android:title="@string/nav_settings" />
+</menu>

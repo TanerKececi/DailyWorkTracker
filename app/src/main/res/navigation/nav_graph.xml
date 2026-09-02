@@ -53,6 +53,12 @@
 
     </fragment>
 
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.dailyworktracker.ui.settings.SettingsFragment"
+        android:label="@string/settings_title"
+        tools:layout="@layout/fragment_settings" />
+
     <dialog
         android:id="@+id/addEditHabitFragment"
         android:name="com.example.dailyworktracker.ui.addedithabit.AddEditHabitFragment"
@@ -66,5 +72,10 @@
             app:argType="long" />
 
     </dialog>
+
+    <!-- Global: the bottom bar's + opens the sheet from whichever tab is showing. -->
+    <action
+        android:id="@+id/action_global_addEditHabit"
+        app:destination="@id/addEditHabitFragment" />
 
 </navigation>

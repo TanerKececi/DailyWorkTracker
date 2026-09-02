@@ -25,7 +25,6 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                app:navigationIcon="@drawable/ic_arrow_back"
                 app:title="@string/all_habits_title" />
 
         </com.google.android.material.appbar.AppBarLayout>

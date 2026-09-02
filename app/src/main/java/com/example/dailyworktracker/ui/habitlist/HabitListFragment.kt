@@ -5,9 +5,6 @@ import android.text.InputType
 import android.view.View
 import android.widget.EditText
 import android.widget.PopupMenu
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -16,11 +13,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.SimpleItemAnimator
-import com.example.dailyworktracker.BuildConfig
 import com.example.dailyworktracker.R
-import com.example.dailyworktracker.data.sample.SampleDataSeeder
 import com.example.dailyworktracker.databinding.FragmentHabitListBinding
-import com.example.dailyworktracker.ui.addedithabit.AddEditHabitViewModel.Companion.NEW_HABIT_ID
 import com.example.dailyworktracker.ui.common.viewBinding
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointBackward
@@ -32,17 +26,12 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import javax.inject.Inject
 
 /** Shows the habits due on the selected day and lets the user tick them off, today or in the past. */
 @AndroidEntryPoint
 class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
     private val binding by viewBinding(FragmentHabitListBinding::bind)
     private val viewModel: HabitListViewModel by viewModels()
-
-    /** Only ever used behind a `BuildConfig.DEBUG` check; see [seedSampleData]. */
-    @Inject
-    lateinit var sampleDataSeeder: SampleDataSeeder
 
     private val habitAdapter =
         HabitListAdapter(
@@ -66,7 +55,7 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
             binding.root,
             getString(message, item.title),
             Snackbar.LENGTH_SHORT,
-        ).setAnchorView(binding.fabAddHabit)
+        ).setAnchorView(bottomNav())
             .setAction(R.string.habit_skip_undo) { viewModel.onHabitSkipToggled(item.id) }
             .show()
     }
@@ -101,8 +90,6 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
-        applyWindowInsets()
-        setUpToolbarMenu()
         // The date bar's stepper buttons are wired in the layout; only the picker needs a dialog.
         binding.viewModel = viewModel
         binding.buttonPickDate.setOnClickListener { showDatePicker() }
@@ -112,7 +99,6 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         // below. Ticking a box is not a change worth animating anyway.
         (binding.recyclerHabits.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
         ItemTouchHelper(SkipSwipeCallback(::toggleSkip)).attachToRecyclerView(binding.recyclerHabits)
-        binding.fabAddHabit.setOnClickListener { navigateToHabitEditor(NEW_HABIT_ID) }
         observeUiState()
     }
 
@@ -145,49 +131,8 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
             }.show(childFragmentManager, DATE_PICKER_TAG)
     }
 
-    private fun setUpToolbarMenu() =
-        with(binding.toolbar) {
-            inflateMenu(R.menu.menu_habit_list)
-            // Sample data is a development aid; it must never be reachable in a release build.
-            menu.findItem(R.id.action_seed_sample_data).isVisible = BuildConfig.DEBUG
-
-            setOnMenuItemClickListener { menuItem ->
-                when (menuItem.itemId) {
-                    R.id.action_all_habits -> {
-                        findNavController().navigate(
-                            HabitListFragmentDirections.actionHabitListToAllHabits(),
-                        )
-                        true
-                    }
-
-                    R.id.action_seed_sample_data -> {
-                        seedSampleData()
-                        true
-                    }
-
-                    else -> false
-                }
-            }
-        }
-
-    /**
-     * Debug-only development aid.
-     *
-     * Deliberately driven from the Fragment rather than the ViewModel: the seeder is not part of the
-     * app's behaviour, and threading it through the production ViewModel would put a debug
-     * dependency in its constructor and in every test that builds one.
-     */
-    private fun seedSampleData() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            sampleDataSeeder.seed()
-            viewModel.onTodayClicked()
-            Snackbar.make(
-                binding.root,
-                R.string.debug_sample_data_inserted,
-                Snackbar.LENGTH_SHORT,
-            ).setAnchorView(binding.fabAddHabit).show()
-        }
-    }
+    /** Snackbars anchor to the bar so they clear it; it belongs to the Activity, not this screen. */
+    private fun bottomNav(): View = requireActivity().findViewById(R.id.bottomNav)
 
     private fun navigateToHabitEditor(habitId: Long) {
         findNavController().navigate(
@@ -195,20 +140,11 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         )
     }
 
-    /**
-     * The app draws edge to edge, so keep content clear of the gesture bar. Only the bottom inset
-     * is applied here; the AppBarLayout already consumes the top one via `fitsSystemWindows`.
+    /*
+     * No bottom inset handling here any more. The Activity lays this screen out *above* the bottom
+     * bar, and the bar consumes the gesture-bar inset itself via fitsSystemWindows, so anything
+     * added here would be a second helping of padding for an edge this screen no longer reaches.
      */
-    private fun applyWindowInsets() {
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            val bottom =
-                insets.getInsets(
-                    WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
-                ).bottom
-            view.updatePadding(bottom = bottom)
-            insets
-        }
-    }
 
     override fun onDestroyView() {
         // The adapter outlives the view here, so drop the RecyclerView's reference to it.
@@ -257,7 +193,7 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
                             binding.root,
                             getString(R.string.habit_archived_message, item.title),
                             Snackbar.LENGTH_SHORT,
-                        ).setAnchorView(binding.fabAddHabit).show()
+                        ).setAnchorView(bottomNav()).show()
                         true
                     }
 

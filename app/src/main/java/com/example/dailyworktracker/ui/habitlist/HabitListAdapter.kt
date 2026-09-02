@@ -17,6 +17,7 @@ class HabitListAdapter(
     private val onToggleCompleted: (habitId: Long) -> Unit,
     private val onAmountClicked: (item: HabitListItemUiModel) -> Unit,
     private val onMoreClicked: (item: HabitListItemUiModel, anchor: View) -> Unit,
+    private val onToggleSkipped: (item: HabitListItemUiModel) -> Unit,
 ) : ListAdapter<HabitListItemUiModel, HabitListAdapter.HabitViewHolder>(DIFF_CALLBACK) {
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -45,9 +46,16 @@ class HabitListAdapter(
                 // previously occupied this recycled holder.
                 checkboxCompleted.setOnClickListener { onToggleCompleted(item.id) }
                 buttonAmount.setOnClickListener { onAmountClicked(item) }
-                // Tapping anywhere on the row does whatever that row's control does.
+                imageSkipped.setOnClickListener { onToggleSkipped(item) }
+                // Tapping anywhere on the row does whatever that row's control does. A skipped row
+                // shows the skip marker, so tapping it takes the skip back rather than silently
+                // completing a day the user has already decided to pass on.
                 root.setOnClickListener {
-                    if (item.isAmountTracked) onAmountClicked(item) else onToggleCompleted(item.id)
+                    when {
+                        item.isSkipped -> onToggleSkipped(item)
+                        item.isAmountTracked -> onAmountClicked(item)
+                        else -> onToggleCompleted(item.id)
+                    }
                 }
                 buttonMore.setOnClickListener { onMoreClicked(item, it) }
 

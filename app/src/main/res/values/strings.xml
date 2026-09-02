@@ -39,6 +39,13 @@
     <string name="habit_action_restore">Restore</string>
     <string name="habit_archived_message">%1$s archived</string>
     <string name="habit_restored_message">%1$s restored</string>
+    <!-- Swiping a row left marks the day as deliberately skipped rather than missed -->
+    <string name="habit_action_skip">Skip</string>
+    <string name="habit_skipped_message">%1$s skipped for this day</string>
+    <string name="habit_unskipped_message">%1$s no longer skipped</string>
+    <string name="habit_skip_undo">Undo</string>
+    <!-- Spoken for the marker on a skipped row, and the tap that takes the skip back -->
+    <string name="habit_skipped_label">%1$s is skipped for this day. Tap to undo.</string>
 
     <!-- Reminders -->
     <string name="reminder_channel_name">Habit reminders</string>

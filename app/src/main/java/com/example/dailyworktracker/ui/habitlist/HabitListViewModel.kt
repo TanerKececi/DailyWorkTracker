@@ -176,6 +176,17 @@ class HabitListViewModel
             viewModelScope.launch { repository.setAmount(habitId, date, amount) }
         }
 
+        /**
+         * Marks the day on screen as deliberately skipped, or takes the skip back.
+         *
+         * One method for both directions, so the swipe and its undo cannot disagree about what the
+         * opposite of a skip is.
+         */
+        fun onHabitSkipToggled(habitId: Long) {
+            val date = selectedDate.value
+            viewModelScope.launch { repository.toggleSkip(habitId, date) }
+        }
+
         fun onHabitArchived(habitId: Long) {
             viewModelScope.launch { repository.archiveHabit(habitId) }
         }
@@ -195,4 +206,5 @@ private fun TodayHabit.toUiModel() =
         currentStreak = currentStreak,
         goal = habit.toGoal(),
         amount = amount,
+        isSkipped = isSkipped,
     )

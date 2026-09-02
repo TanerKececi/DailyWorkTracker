@@ -24,9 +24,15 @@ data class HabitListItemUiModel(
     val goal: HabitGoal,
     /** What was logged for the day being shown; null when nothing has been logged yet. */
     val amount: Int?,
+    /** Whether the day being shown was deliberately skipped, rather than merely not done. */
+    val isSkipped: Boolean,
 ) {
     val isAmountTracked: Boolean get() = goal is HabitGoal.Amount
 
     /** Null for a tick-it-off habit, which is how the layout knows to draw a checkbox instead. */
     val unit: HabitUnit? get() = (goal as? HabitGoal.Amount)?.unit
+
+    // Three controls share one slot, and a binding expression cannot work that out for itself.
+    val showsCheckbox: Boolean get() = !isAmountTracked && !isSkipped
+    val showsAmount: Boolean get() = isAmountTracked && !isSkipped
 }

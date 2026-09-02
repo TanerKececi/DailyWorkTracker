@@ -14,6 +14,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.dailyworktracker.BuildConfig
 import com.example.dailyworktracker.R
 import com.example.dailyworktracker.data.sample.SampleDataSeeder
@@ -47,7 +49,27 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
             onToggleCompleted = { habitId -> viewModel.onHabitCheckedChanged(habitId) },
             onAmountClicked = { item -> showAmountDialog(item) },
             onMoreClicked = { item, anchor -> showHabitMenu(item, anchor) },
+            onToggleSkipped = { item -> toggleSkip(item) },
         )
+
+    /**
+     * Skips the day on screen, or takes the skip back, and says which happened.
+     *
+     * The Snackbar reports the state the row has just moved *to*, read from the item as it was
+     * before the toggle. Undo is the same call again, because a skip is its own opposite.
+     */
+    private fun toggleSkip(item: HabitListItemUiModel) {
+        viewModel.onHabitSkipToggled(item.id)
+        val message =
+            if (item.isSkipped) R.string.habit_unskipped_message else R.string.habit_skipped_message
+        Snackbar.make(
+            binding.root,
+            getString(message, item.title),
+            Snackbar.LENGTH_SHORT,
+        ).setAnchorView(binding.fabAddHabit)
+            .setAction(R.string.habit_skip_undo) { viewModel.onHabitSkipToggled(item.id) }
+            .show()
+    }
 
     /**
      * Asks how much was done, prefilled with whatever is already recorded.
@@ -85,6 +107,11 @@ class HabitListFragment : Fragment(R.layout.fragment_habit_list) {
         binding.viewModel = viewModel
         binding.buttonPickDate.setOnClickListener { showDatePicker() }
         binding.recyclerHabits.adapter = habitAdapter
+        // The default change animation cross-fades a rebound row by animating its alpha and its
+        // translation, which fights both the dimmed look of a skipped row and the swipe reset
+        // below. Ticking a box is not a change worth animating anyway.
+        (binding.recyclerHabits.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
+        ItemTouchHelper(SkipSwipeCallback(::toggleSkip)).attachToRecyclerView(binding.recyclerHabits)
         binding.fabAddHabit.setOnClickListener { navigateToHabitEditor(NEW_HABIT_ID) }
         observeUiState()
     }
